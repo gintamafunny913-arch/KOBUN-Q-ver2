@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古文単語スピードクエスト</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Serif+JP:wght@900&family=Outfit:wght@800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fdfbf7;
+            --card-bg: #ffffff;
+            --primary: #e74c3c;
+            --secondary: #2c3e50;
+            --accent: #f1c40f;
+        }
+        * { box-sizing: border-box; user-select: none; }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: 'Noto Serif JP', serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
+        }
+
+        /* ===================== 設定①：枚数選択 ===================== */
+        #screen-count {
+            position: fixed; inset: 0; z-index: 300;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; gap: 28px;
+            padding: 40px 20px;
+        }
+        .screen-title {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(32px, 6vw, 64px);
+            color: var(--secondary); text-align: center;
+            line-height: 1.3; text-shadow: 4px 4px 0 var(--accent);
+        }
+        .count-row {
+            display: flex; align-items: center; gap: 18px;
+            flex-wrap: wrap; justify-content: center;
+        }
+        #card-count {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(28px, 5vw, 48px);
+            width: 110px; text-align: center;
+            border: 5px solid var(--secondary); border-radius: 16px;
+            background: #fff; color: var(--secondary);
+            padding: 8px 12px; outline: none;
+            box-shadow: 4px 4px 0 var(--accent);
+            -moz-appearance: textfield;
+        }
+        #card-count::-webkit-outer-spin-button,
+        #card-count::-webkit-inner-spin-button { -webkit-appearance: none; }
+        .count-sub { font-size: 14px; color: #999; text-align: center; }
+
+        /* ===================== 設定②：単語入力 ===================== */
+        #screen-input {
+            position: fixed; inset: 0; z-index: 200;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: none; flex-direction: column;
+            align-items: center;
+        }
+        .input-header {
+            width: 100%; padding: 18px 28px 14px;
+            background: var(--bg-color);
+            border-bottom: 3px solid #e6dfd3;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .input-header-title {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(18px, 3vw, 28px);
+            color: var(--secondary);
+            text-shadow: 2px 2px 0 var(--accent);
+        }
+        .word-list {
+            width: 100%; max-width: 700px;
+            overflow-y: auto; padding: 16px 14px 160px;
+            display: flex; flex-direction: column; gap: 12px;
+            flex: 1;
+        }
+        .word-entry {
+            background: #fff;
+            border: 3px solid var(--secondary);
+            border-radius: 14px;
+            box-shadow: 3px 3px 0 #cbd1d6;
+            overflow: hidden;
+        }
+        .word-entry-head {
+            background: var(--secondary); color: #fff;
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: 14px; letter-spacing: 1px;
+            padding: 6px 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .word-entry-head .num {
+            background: var(--accent); color: var(--secondary);
+            width: 24px; height: 24px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 900; flex-shrink: 0;
+        }
+        .word-entry-body { display: flex; flex-direction: column; }
+        .word-entry-body input {
+            font-family: 'Noto Serif JP', serif;
+            font-size: clamp(14px, 2.2vw, 17px);
+            border: none; outline: none;
+            padding: 9px 14px;
+            background: transparent; color: var(--secondary); width: 100%;
+        }
+        .word-entry-body input:first-child {
+            border-bottom: 2px dashed #e6dfd3;
+            font-weight: 900; font-size: clamp(15px, 2.5vw, 19px);
+        }
+        .word-entry-body input::placeholder { color: #bbb; font-weight: 400; }
+        .input-footer {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            padding: 12px 16px 16px;
+            background: rgba(253,251,247,.97);
+            border-top: 3px solid #e6dfd3;
+            backdrop-filter: blur(4px);
+            display: flex; flex-direction: column;
+            align-items: center; gap: 10px;
+            z-index: 20;
+        }
+        .footer-name-row {
+            display: flex; align-items: center; gap: 8px;
+            width: min(580px, 94vw);
+        }
+        .footer-name-row input {
+            font-family: 'Noto Serif JP', serif;
+            font-size: clamp(13px, 3vw, 15px);
+            flex: 1; padding: 9px 12px;
+            border: 3px solid var(--secondary); border-radius: 12px;
+            outline: none; background: #fff; color: var(--secondary);
+            box-shadow: 3px 3px 0 var(--accent);
+            min-width: 0;
+        }
+        .footer-btn-row {
+            display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+            width: min(580px, 94vw);
+        }
+        .footer-btn-save {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(12px, 3vw, 14px);
+            padding: 9px 14px;
+            background: #fff3cd; color: var(--secondary);
+            border: 3px solid var(--accent); border-radius: 12px;
+            cursor: pointer; box-shadow: 0 4px 0 #b8860b;
+            white-space: nowrap; flex-shrink: 0;
+            transition: all .1s;
+        }
+        .footer-btn-save:active { transform: translateY(3px); box-shadow: 0 1px 0 #b8860b; }
+        .footer-btn-start {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(12px, 3vw, 14px);
+            padding: 9px 20px;
+            background: var(--primary); color: #fff;
+            border: 3px solid var(--secondary); border-radius: 12px;
+            cursor: pointer; box-shadow: 0 4px 0 var(--secondary);
+            white-space: nowrap;
+            transition: all .1s;
+        }
+        .footer-btn-start:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--secondary); }
+
+        /* ===================== 共通ボタン ===================== */
+        .btn {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(16px, 3vw, 28px);
+            padding: clamp(12px,2vw,18px) clamp(28px,5vw,60px);
+            background-color: var(--primary); color: white;
+            border: 5px solid var(--secondary); border-radius: 50px;
+            cursor: pointer; box-shadow: 0 8px 0 var(--secondary);
+            transition: all 0.1s ease; letter-spacing: 1px;
+        }
+        .btn:active { transform: translateY(5px); box-shadow: 0 3px 0 var(--secondary); }
+        .btn.secondary {
+            background: #fff; color: var(--secondary);
+            font-size: clamp(13px,2vw,20px);
+        }
+
+        /* ===================== スタート画面 ===================== */
+        #screen-start {
+            position: fixed; inset: 0; z-index: 100;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center; gap: 30px;
+        }
+        .game-title {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(42px, 8vw, 75px); color: var(--secondary);
+            text-align: center; line-height: 1.3;
+            text-shadow: 4px 4px 0 var(--accent); letter-spacing: 2px;
+        }
+        .start-btn {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(22px, 4vw, 38px); padding: 22px 65px;
+            background-color: var(--primary); color: white;
+            border: 6px solid var(--secondary); border-radius: 50px;
+            cursor: pointer; box-shadow: 0 10px 0 var(--secondary);
+            transition: all 0.1s ease; letter-spacing: 1px;
+        }
+        .start-btn:active { transform: translateY(6px); box-shadow: 0 4px 0 var(--secondary); }
+        .start-hint { font-size: 20px; color: #555; font-weight: bold; }
+
+        /* ===================== ゲーム画面（スマホ縦画面対応） ===================== */
+        #game-container {
+            /* 横長画面：横幅優先 */
+            width: min(1100px, 96vw);
+            height: min(650px, 92vh);
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; opacity: 0; transition: opacity 0.5s;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* ---- スマホ縦画面（portrait）専用 ---- */
+        @media (max-width: 600px) and (orientation: portrait),
+               (max-width: 480px) {
+            #game-container {
+                width: 100vw;
+                height: 100dvh;          /* dynamic viewport height */
+                padding: 8px 8px 0 8px;
+            }
+            .top-ui {
+                flex-wrap: wrap;
+                gap: 4px;
+                padding: 0 4px;
+            }
+            #counter-text {
+                font-size: 13px !important;
+                width: 100%;
+                text-align: center;
+            }
+            .progress-container {
+                width: 100% !important;
+                height: 18px;
+            }
+            .combo-box {
+                font-size: 26px !important;
+                width: 100%;
+                text-align: center;
+                animation: none;   /* 縦画面では揺れを抑える */
+            }
+            .card-stage {
+                margin: 6px 0;
+            }
+            .flash-card {
+                border-width: 5px;
+                border-radius: 20px;
+            }
+            .word-type {
+                top: 16px; left: 18px;
+                font-size: 16px;
+                padding: 4px 14px;
+            }
+            .main-text {
+                font-size: clamp(44px, 14vw, 80px) !important;
+            }
+            .main-text.answer {
+                font-size: clamp(36px, 11vw, 64px) !important;
+            }
+            .hint-text {
+                font-size: 14px;
+                padding: 8px 16px;
+                bottom: 14px;
+                width: 90%;
+            }
+            .bottom-ui {
+                font-size: 12px !important;
+                padding: 6px 4px 10px;
+                gap: 8px !important;
+            }
+            .bottom-ui button {
+                font-size: 12px !important;
+                padding: 6px 12px !important;
+            }
+            #result-screen .clear-title {
+                font-size: 52px;
+            }
+            #result-screen > div:nth-child(2) {
+                font-size: 20px !important;
+            }
+            #result-screen .start-btn {
+                font-size: 18px !important;
+                padding: 14px 30px;
+            }
+        }
+
+        .top-ui { display: flex; justify-content: space-between; align-items: center; }
+        .progress-container {
+            width: 55%; background: #e6dfd3; height: 24px;
+            border-radius: 12px; border: 3px solid var(--secondary); overflow: hidden;
+        }
+        .progress-bar { width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease; }
+        .combo-box {
+            font-family: 'Outfit', sans-serif; font-size: 42px;
+            color: var(--primary); font-weight: 900;
+            text-shadow: 2px 2px 0 var(--secondary);
+            animation: pulse 0.35s infinite alternate;
+        }
+        .card-stage {
+            flex-grow: 1; margin: 30px 0;
+            display: flex; justify-content: center; align-items: center;
+            perspective: 1000px;
+        }
+        .flash-card {
+            width: 100%; height: 100%;
+            background: var(--card-bg);
+            border: 8px solid var(--secondary); border-radius: 30px;
+            box-shadow: 0 15px 0 #cbd1d6, 0 15px 25px rgba(0,0,0,.06);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.12s ease-in-out;
+            cursor: pointer;
+        }
+        .card-flip { transform: scale(0.94) rotateX(12deg); }
+        .word-type {
+            position: absolute; top: 30px; left: 40px;
+            background: var(--secondary); color: white;
+            font-size: 22px; padding: 6px 20px; border-radius: 10px;
+            font-weight: 900; letter-spacing: 2px;
+            box-shadow: 3px 3px 0 var(--accent);
+        }
+        .main-text {
+            font-size: 115px; font-weight: 900;
+            color: var(--secondary); text-align: center; letter-spacing: 2px;
+        }
+        .main-text.answer { color: var(--primary); font-size: 95px; }
+        .hint-text {
+            position: absolute; bottom: 35px;
+            font-size: 26px; color: #333;
+            background: #fdfbf7; padding: 12px 30px; border-radius: 15px;
+            border: 2px dashed #ccc; width: 85%; text-align: center; line-height: 1.4;
+        }
+        .bottom-ui {
+            text-align: center; font-size: 22px;
+            color: var(--secondary); font-weight: bold; letter-spacing: 1px;
+        }
+
+        /* リザルト */
+        #result-screen {
+            position: fixed; inset: 0; background: var(--card-bg);
+            display: none; flex-direction: column;
+            justify-content: center; align-items: center; gap: 24px;
+            z-index: 200; padding: 20px;
+        }
+        .clear-title {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(48px, 10vw, 85px); color: var(--accent);
+            text-shadow: 5px 5px 0 var(--secondary);
+            text-align: center;
+        }
+
+
+        /* ===================== 保存スロット一覧 ===================== */
+        #slots-area {
+            width: min(600px, 92vw);
+            max-height: 38vh;
+            overflow-y: auto;
+            display: flex; flex-direction: column; gap: 10px;
+            padding: 2px 4px;
+        }
+        .slot-card {
+            background: #fff;
+            border: 3.5px solid var(--secondary);
+            border-radius: 16px;
+            box-shadow: 4px 4px 0 #cbd1d6;
+            padding: 12px 16px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .slot-info { flex: 1; min-width: 0; }
+        .slot-name {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(14px, 2.5vw, 20px);
+            color: var(--secondary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .slot-meta { font-size: 12px; color: #999; margin-top: 2px; }
+        .slot-btn {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: 13px; padding: 8px 14px;
+            border-radius: 10px; border: 2.5px solid var(--secondary);
+            cursor: pointer; white-space: nowrap;
+            transition: all 0.1s;
+        }
+        .slot-btn.start {
+            background: var(--primary); color: #fff;
+            box-shadow: 0 4px 0 var(--secondary);
+        }
+        .slot-btn.start:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--secondary); }
+        .slot-btn.del {
+            background: #fff; color: #bbb;
+            border-color: #ddd; box-shadow: none; font-size: 16px; padding: 6px 10px;
+        }
+        .slot-btn.del:hover { color: var(--primary); border-color: var(--primary); }
+        .slot-btn.share {
+            background: #e8f4ff; color: #1a6ab8;
+            border-color: #7ab8ee; box-shadow: none; font-size: 16px; padding: 6px 10px;
+        }
+        .slot-btn.share:hover { background: #cce4ff; border-color: #1a6ab8; }
+        .slot-btn.edit {
+            background: #f0fff0; color: #2a7a2a;
+            border-color: #88cc88; box-shadow: none; font-size: 16px; padding: 6px 10px;
+        }
+        .slot-btn.edit:hover { background: #d0ffd0; border-color: #2a7a2a; }
+        .slots-empty { font-size: 14px; color: #bbb; text-align: center; padding: 16px 0; }
+
+        /* ===================== 共有オーバーレイ ===================== */
+        #share-overlay {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(44,62,80,.55); backdrop-filter: blur(4px);
+            justify-content: center; align-items: center; padding: 20px;
+        }
+        #share-overlay.show { display: flex; }
+        .share-panel {
+            background: var(--bg-color);
+            background-image: radial-gradient(#e6dfd3 1px, transparent 1px);
+            background-size: 20px 20px;
+            border: 5px solid var(--secondary); border-radius: 26px;
+            box-shadow: 8px 8px 0 var(--secondary);
+            padding: 28px 28px 24px;
+            width: min(560px, 92vw);
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .share-title {
+            font-family: 'Dela Gothic One', sans-serif;
+            font-size: clamp(18px,3vw,26px); color: var(--secondary);
+            text-shadow: 2px 2px 0 var(--accent);
+        }
+        .share-desc { font-size: 13px; color: #666; line-height: 1.7; }
+        .share-url-box {
+            display: flex; gap: 8px; align-items: stretch;
+        }
+        #share-url-text {
+            flex: 1; font-size: 12px; font-family: monospace;
+            border: 3px solid var(--secondary); border-radius: 10px;
+            padding: 10px 12px; background: #fff; color: #333;
+            outline: none; resize: none; height: 72px;
+            word-break: break-all;
+        }
+        .copy-btn {
+            font-family: 'Dela Gothic One', sans-serif; font-size: 14px;
+            padding: 0 16px; border: 3px solid var(--secondary); border-radius: 10px;
+            background: var(--accent); color: var(--secondary); cursor: pointer;
+            box-shadow: 3px 3px 0 var(--secondary); white-space: nowrap;
+            transition: all .1s; min-width: 72px; text-align: center;
+        }
+        .copy-btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--secondary); }
+        .copy-btn.copied { background: #3cff9e; }
+        #share-qr { text-align: center; }
+        #share-qr img { border: 3px solid var(--secondary); border-radius: 12px; }
+        .share-warn { font-size: 12px; color: #e67e22; background: #fff9ec;
+            border: 1.5px solid #f1c40f; border-radius: 8px; padding: 8px 12px; }
+
+        /* ===================== 背景アニメーション ===================== */
+        #bg-canvas, #start-bg {
+            position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0;
+        }
+        .top-ui, .card-stage, .bottom-ui { position:relative; z-index:1; }
+
+        #game-container.dark-bg #counter-text { color:#e0e8ff !important; text-shadow:0 0 8px rgba(0,200,255,.6); }
+        #game-container.dark-bg .combo-box    { color:#ff8888 !important; text-shadow:2px 2px 0 #000; }
+        #game-container.dark-bg .progress-container { border-color:#fff3 !important; background:rgba(255,255,255,.1) !important; }
+        #game-container.dark-bg .bottom-ui    { color:#aac !important; }
+        #game-container.dark-bg .bottom-ui button { color:#99b !important; border-color:#556 !important; background:rgba(0,0,10,.6) !important; }
+        #game-container.dark-bg .flash-card {
+            background: rgba(255,255,255,0.82) !important;
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        @keyframes twinkle  { 0%,100%{opacity:.15} 50%{opacity:.9} }
+        @keyframes floatOrb { 0%{transform:translateY(0);opacity:0} 15%{opacity:.85} 100%{transform:translateY(-140px);opacity:0} }
+        @keyframes starFall  { to{transform:translateY(50%)} }
+        @keyframes enemyDesc { 0%{transform:translateY(-80px)} 100%{transform:translateY(120%)} }
+        @keyframes beam      { 0%{height:0;opacity:1} 55%{height:72%;opacity:1} 100%{height:72%;opacity:0} }
+        @keyframes engineGlow{ 0%,100%{opacity:.6;transform:scaleX(1)} 50%{opacity:1;transform:scaleX(1.25)} }
+        @keyframes scoreFlash{ 0%,100%{opacity:1} 50%{opacity:.7} }
+        @keyframes partyWalk { 0%,100%{transform:translateX(0)} 50%{transform:translateX(3px)} }
+        @keyframes partyMove { 0%{transform:translateX(-8%)} 100%{transform:translateX(8%)} }
+        @keyframes treeWave  { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+        @keyframes waterShim { 0%,100%{opacity:.75} 50%{opacity:1} }
+        @keyframes fightStance{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+        @keyframes punch1  { 0%,55%,100%{transform:translateX(0) rotate(0)} 27%{transform:translateX(38px) rotate(-10deg)} }
+        @keyframes kick2   { 0%,55%,100%{transform:none} 27%{transform:rotate(-35deg) translateY(-18px)} }
+        @keyframes hitFlash{ 0%,100%{opacity:0} 30%,70%{opacity:1} }
+        @keyframes stageGlow{ 0%,100%{box-shadow:0 -4px 18px #ff880077} 50%{box-shadow:0 -4px 36px #ff8800bb} }
+        @keyframes retroScroll { to{transform:translateX(-50%)} }
+        @keyframes retroChar   { 0%,100%{transform:translateY(0)} 45%{transform:translateY(-22px)} }
+        @keyframes retroEnemy  { 0%{transform:translateX(105%)} 100%{transform:translateX(-30%)} }
+        @keyframes starDrift1 { to{transform:translateX(-50%)} }
+        @keyframes starDrift2 { to{transform:translateX(-50%)} }
+        @keyframes enemyFly   { 0%{transform:translateX(0)} 100%{transform:translateX(calc(-100vw - 80px))} }
+        @keyframes laserShot  { 0%{opacity:0;width:0} 10%{opacity:1;width:120px} 80%{opacity:1} 100%{opacity:0;width:140px} }
+        @keyframes shipBob    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes fightIdle  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+        @keyframes fightPunch { 0%,55%,100%{transform:translateX(0) rotate(0deg)} 28%{transform:translateX(28px) rotate(-8deg)} }
+        @keyframes fightKick  { 0%,55%,100%{transform:none} 28%{transform:rotate(-20deg) translateY(-12px)} }
+        @keyframes energyArc  { 0%,100%{opacity:0;transform:scale(.4)} 50%{opacity:.9;transform:scale(1)} }
+        @keyframes stagePulse { 0%,100%{opacity:.4} 50%{opacity:.75} }
+        @keyframes rpgCastle  { 0%,100%{filter:brightness(.9)} 50%{filter:brightness(1.1)} }
+        @keyframes rpgParticle{ 0%{transform:translateY(0) scale(.5);opacity:0} 20%{opacity:1} 100%{transform:translateY(-120px) scale(1.2);opacity:0} }
+        @keyframes rpgMoon    { 0%,100%{box-shadow:0 0 20px 6px rgba(200,230,255,.4)} 50%{box-shadow:0 0 35px 12px rgba(200,230,255,.7)} }
+
+        .style-selector { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+        .style-btn {
+            font-family:'Dela Gothic One',sans-serif; font-size:13px;
+            padding:9px 14px; border:3px solid var(--secondary); border-radius:12px;
+            background:#fff; color:var(--secondary); cursor:pointer;
+            box-shadow:3px 3px 0 #cbd1d6; transition:all .1s; white-space:nowrap;
+        }
+        .style-btn.active {
+            background:var(--secondary); color:#fff;
+            box-shadow:3px 3px 0 var(--accent);
+        }
+        .style-btn:active { transform:translate(2px,2px); box-shadow:1px 1px 0 #cbd1d6; }
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.07); } }
+    </style>
+    <script>/* qr-creator v1.0.0 - MIT License */
+/*
+ jquery-qrcode v0.14.0 - https://larsjung.de/jquery-qrcode/ */
+'use strict';let G=null;class H{}H.render=function(w,B){G(w,B)};self.QrCreator=H;
+(function(w){function B(t,c,a,e){var b={},h=w(a,c);h.u(t);h.J();e=e||0;var r=h.h(),d=h.h()+2*e;b.text=t;b.level=c;b.version=a;b.O=d;b.a=function(b,a){b-=e;a-=e;return 0>b||b>=r||0>a||a>=r?!1:h.a(b,a)};return b}function C(t,c,a,e,b,h,r,d,g,x){function u(b,a,f,c,d,r,g){b?(t.lineTo(a+r,f+g),t.arcTo(a,f,c,d,h)):t.lineTo(a,f)}r?t.moveTo(c+h,a):t.moveTo(c,a);u(d,e,a,e,b,-h,0);u(g,e,b,c,b,0,-h);u(x,c,b,c,a,h,0);u(r,c,a,e,a,0,h)}function z(t,c,a,e,b,h,r,d,g,x){function u(b,a,c,d){t.moveTo(b+c,a);t.lineTo(b,
+a);t.lineTo(b,a+d);t.arcTo(b,a,b+c,a,h)}r&&u(c,a,h,h);d&&u(e,a,-h,h);g&&u(e,b,-h,-h);x&&u(c,b,h,-h)}function A(t,c){var a=c.fill;if("string"===typeof a)t.fillStyle=a;else{var e=a.type,b=a.colorStops;a=a.position.map((b)=>Math.round(b*c.size));if("linear-gradient"===e)var h=t.createLinearGradient.apply(t,a);else if("radial-gradient"===e)h=t.createRadialGradient.apply(t,a);else throw Error("Unsupported fill");b.forEach(([b,a])=>{h.addColorStop(b,a)});t.fillStyle=h}}function y(t,c){a:{var a=c.text,e=
+c.v,b=c.N,h=c.K,r=c.P;b=Math.max(1,b||1);for(h=Math.min(40,h||40);b<=h;b+=1)try{var d=B(a,e,b,r);break a}catch(J){}d=void 0}if(!d)return null;a=t.getContext("2d");c.background&&(a.fillStyle=c.background,a.fillRect(c.left,c.top,c.size,c.size));e=d.O;h=c.size/e;a.beginPath();for(r=0;r<e;r+=1)for(b=0;b<e;b+=1){var g=a,x=c.left+b*h,u=c.top+r*h,p=r,q=b,f=d.a,k=x+h,m=u+h,D=p-1,E=p+1,n=q-1,l=q+1,y=Math.floor(Math.min(.5,Math.max(0,c.R))*h),v=f(p,q),I=f(D,n),w=f(D,q);D=f(D,l);var F=f(p,l);l=f(E,l);q=f(E,
+q);E=f(E,n);p=f(p,n);x=Math.round(x);u=Math.round(u);k=Math.round(k);m=Math.round(m);v?C(g,x,u,k,m,y,!w&&!p,!w&&!F,!q&&!F,!q&&!p):z(g,x,u,k,m,y,w&&p&&I,w&&F&&D,q&&F&&l,q&&p&&E)}A(a,c);a.fill();return t}var v={minVersion:1,maxVersion:40,ecLevel:"L",left:0,top:0,size:200,fill:"#000",background:null,text:"no text",radius:.5,quiet:0};G=function(t,c){var a={};Object.assign(a,v,t);a.N=a.minVersion;a.K=a.maxVersion;a.v=a.ecLevel;a.left=a.left;a.top=a.top;a.size=a.size;a.fill=a.fill;a.background=a.background;
+a.text=a.text;a.R=a.radius;a.P=a.quiet;if(c instanceof HTMLCanvasElement){if(c.width!==a.size||c.height!==a.size)c.width=a.size,c.height=a.size;c.getContext("2d").clearRect(0,0,c.width,c.height);y(c,a)}else t=document.createElement("canvas"),t.width=a.size,t.height=a.size,a=y(t,a),c.appendChild(a)}})(function(){function w(c){var a=C.s(c);return{S:function(){return 4},b:function(){return a.length},write:function(c){for(var b=0;b<a.length;b+=1)c.put(a[b],8)}}}function B(){var c=[],a=0,e={B:function(){return c},
+c:function(b){return 1==(c[Math.floor(b/8)]>>>7-b%8&1)},put:function(b,h){for(var a=0;a<h;a+=1)e.m(1==(b>>>h-a-1&1))},f:function(){return a},m:function(b){var h=Math.floor(a/8);c.length<=h&&c.push(0);b&&(c[h]|=128>>>a%8);a+=1}};return e}function C(c,a){function e(b,h){for(var a=-1;7>=a;a+=1)if(!(-1>=b+a||d<=b+a))for(var c=-1;7>=c;c+=1)-1>=h+c||d<=h+c||(r[b+a][h+c]=0<=a&&6>=a&&(0==c||6==c)||0<=c&&6>=c&&(0==a||6==a)||2<=a&&4>=a&&2<=c&&4>=c?!0:!1)}function b(b,a){for(var f=d=4*c+17,k=Array(f),m=0;m<
+f;m+=1){k[m]=Array(f);for(var p=0;p<f;p+=1)k[m][p]=null}r=k;e(0,0);e(d-7,0);e(0,d-7);f=y.G(c);for(k=0;k<f.length;k+=1)for(m=0;m<f.length;m+=1){p=f[k];var q=f[m];if(null==r[p][q])for(var n=-2;2>=n;n+=1)for(var l=-2;2>=l;l+=1)r[p+n][q+l]=-2==n||2==n||-2==l||2==l||0==n&&0==l}for(f=8;f<d-8;f+=1)null==r[f][6]&&(r[f][6]=0==f%2);for(f=8;f<d-8;f+=1)null==r[6][f]&&(r[6][f]=0==f%2);f=y.w(h<<3|a);for(k=0;15>k;k+=1)m=!b&&1==(f>>k&1),r[6>k?k:8>k?k+1:d-15+k][8]=m,r[8][8>k?d-k-1:9>k?15-k:14-k]=m;r[d-8][8]=!b;if(7<=
+c){f=y.A(c);for(k=0;18>k;k+=1)m=!b&&1==(f>>k&1),r[Math.floor(k/3)][k%3+d-8-3]=m;for(k=0;18>k;k+=1)m=!b&&1==(f>>k&1),r[k%3+d-8-3][Math.floor(k/3)]=m}if(null==g){b=t.I(c,h);f=B();for(k=0;k<x.length;k+=1)m=x[k],f.put(4,4),f.put(m.b(),y.f(4,c)),m.write(f);for(k=m=0;k<b.length;k+=1)m+=b[k].j;if(f.f()>8*m)throw Error("code length overflow. ("+f.f()+">"+8*m+")");for(f.f()+4<=8*m&&f.put(0,4);0!=f.f()%8;)f.m(!1);for(;!(f.f()>=8*m);){f.put(236,8);if(f.f()>=8*m)break;f.put(17,8)}var u=0;m=k=0;p=Array(b.length);
+q=Array(b.length);for(n=0;n<b.length;n+=1){var v=b[n].j,w=b[n].o-v;k=Math.max(k,v);m=Math.max(m,w);p[n]=Array(v);for(l=0;l<p[n].length;l+=1)p[n][l]=255&f.B()[l+u];u+=v;l=y.C(w);v=z(p[n],l.b()-1).l(l);q[n]=Array(l.b()-1);for(l=0;l<q[n].length;l+=1)w=l+v.b()-q[n].length,q[n][l]=0<=w?v.c(w):0}for(l=f=0;l<b.length;l+=1)f+=b[l].o;f=Array(f);for(l=u=0;l<k;l+=1)for(n=0;n<b.length;n+=1)l<p[n].length&&(f[u]=p[n][l],u+=1);for(l=0;l<m;l+=1)for(n=0;n<b.length;n+=1)l<q[n].length&&(f[u]=q[n][l],u+=1);g=f}b=g;f=
+-1;k=d-1;m=7;p=0;a=y.F(a);for(q=d-1;0<q;q-=2)for(6==q&&--q;;){for(n=0;2>n;n+=1)null==r[k][q-n]&&(l=!1,p<b.length&&(l=1==(b[p]>>>m&1)),a(k,q-n)&&(l=!l),r[k][q-n]=l,--m,-1==m&&(p+=1,m=7));k+=f;if(0>k||d<=k){k-=f;f=-f;break}}}var h=A[a],r=null,d=0,g=null,x=[],u={u:function(b){b=w(b);x.push(b);g=null},a:function(b,a){if(0>b||d<=b||0>a||d<=a)throw Error(b+","+a);return r[b][a]},h:function(){return d},J:function(){for(var a=0,h=0,c=0;8>c;c+=1){b(!0,c);var d=y.D(u);if(0==c||a>d)a=d,h=c}b(!1,h)}};return u}
+function z(c,a){if("undefined"==typeof c.length)throw Error(c.length+"/"+a);var e=function(){for(var b=0;b<c.length&&0==c[b];)b+=1;for(var r=Array(c.length-b+a),d=0;d<c.length-b;d+=1)r[d]=c[d+b];return r}(),b={c:function(b){return e[b]},b:function(){return e.length},multiply:function(a){for(var h=Array(b.b()+a.b()-1),c=0;c<b.b();c+=1)for(var g=0;g<a.b();g+=1)h[c+g]^=v.i(v.g(b.c(c))+v.g(a.c(g)));return z(h,0)},l:function(a){if(0>b.b()-a.b())return b;for(var c=v.g(b.c(0))-v.g(a.c(0)),h=Array(b.b()),
+g=0;g<b.b();g+=1)h[g]=b.c(g);for(g=0;g<a.b();g+=1)h[g]^=v.i(v.g(a.c(g))+c);return z(h,0).l(a)}};return b}C.s=function(c){for(var a=[],e=0;e<c.length;e++){var b=c.charCodeAt(e);128>b?a.push(b):2048>b?a.push(192|b>>6,128|b&63):55296>b||57344<=b?a.push(224|b>>12,128|b>>6&63,128|b&63):(e++,b=65536+((b&1023)<<10|c.charCodeAt(e)&1023),a.push(240|b>>18,128|b>>12&63,128|b>>6&63,128|b&63))}return a};var A={L:1,M:0,Q:3,H:2},y=function(){function c(b){for(var a=0;0!=b;)a+=1,b>>>=1;return a}var a=[[],[6,18],
+[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],
+[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e={w:function(b){for(var a=b<<10;0<=c(a)-c(1335);)a^=1335<<c(a)-c(1335);return(b<<10|a)^21522},A:function(b){for(var a=b<<12;0<=c(a)-c(7973);)a^=7973<<c(a)-c(7973);return b<<12|a},G:function(b){return a[b-1]},F:function(b){switch(b){case 0:return function(b,a){return 0==(b+a)%2};case 1:return function(b){return 0==b%2};case 2:return function(b,a){return 0==a%3};case 3:return function(b,a){return 0==
+(b+a)%3};case 4:return function(b,a){return 0==(Math.floor(b/2)+Math.floor(a/3))%2};case 5:return function(b,a){return 0==b*a%2+b*a%3};case 6:return function(b,a){return 0==(b*a%2+b*a%3)%2};case 7:return function(b,a){return 0==(b*a%3+(b+a)%2)%2};default:throw Error("bad maskPattern:"+b);}},C:function(b){for(var a=z([1],0),c=0;c<b;c+=1)a=a.multiply(z([1,v.i(c)],0));return a},f:function(b,a){if(4!=b||1>a||40<a)throw Error("mode: "+b+"; type: "+a);return 10>a?8:16},D:function(b){for(var a=b.h(),c=0,
+d=0;d<a;d+=1)for(var g=0;g<a;g+=1){for(var e=0,t=b.a(d,g),p=-1;1>=p;p+=1)if(!(0>d+p||a<=d+p))for(var q=-1;1>=q;q+=1)0>g+q||a<=g+q||(0!=p||0!=q)&&t==b.a(d+p,g+q)&&(e+=1);5<e&&(c+=3+e-5)}for(d=0;d<a-1;d+=1)for(g=0;g<a-1;g+=1)if(e=0,b.a(d,g)&&(e+=1),b.a(d+1,g)&&(e+=1),b.a(d,g+1)&&(e+=1),b.a(d+1,g+1)&&(e+=1),0==e||4==e)c+=3;for(d=0;d<a;d+=1)for(g=0;g<a-6;g+=1)b.a(d,g)&&!b.a(d,g+1)&&b.a(d,g+2)&&b.a(d,g+3)&&b.a(d,g+4)&&!b.a(d,g+5)&&b.a(d,g+6)&&(c+=40);for(g=0;g<a;g+=1)for(d=0;d<a-6;d+=1)b.a(d,g)&&!b.a(d+
+1,g)&&b.a(d+2,g)&&b.a(d+3,g)&&b.a(d+4,g)&&!b.a(d+5,g)&&b.a(d+6,g)&&(c+=40);for(g=e=0;g<a;g+=1)for(d=0;d<a;d+=1)b.a(d,g)&&(e+=1);return c+=Math.abs(100*e/a/a-50)/5*10}};return e}(),v=function(){for(var c=Array(256),a=Array(256),e=0;8>e;e+=1)c[e]=1<<e;for(e=8;256>e;e+=1)c[e]=c[e-4]^c[e-5]^c[e-6]^c[e-8];for(e=0;255>e;e+=1)a[c[e]]=e;return{g:function(b){if(1>b)throw Error("glog("+b+")");return a[b]},i:function(b){for(;0>b;)b+=255;for(;256<=b;)b-=255;return c[b]}}}(),t=function(){function c(b,c){switch(c){case A.L:return a[4*
+(b-1)];case A.M:return a[4*(b-1)+1];case A.Q:return a[4*(b-1)+2];case A.H:return a[4*(b-1)+3]}}var a=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,
+2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,
+45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,
+151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],
+[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],
+[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],e={I:function(b,a){var e=c(b,a);if("undefined"==
+typeof e)throw Error("bad rs block @ typeNumber:"+b+"/errorCorrectLevel:"+a);b=e.length/3;a=[];for(var d=0;d<b;d+=1)for(var g=e[3*d],h=e[3*d+1],t=e[3*d+2],p=0;p<g;p+=1){var q=t,f={};f.o=h;f.j=q;a.push(f)}return a}};return e}();return C}());
+//# sourceMappingURL=qr-creator.min.js.map
+    </script>
+</head>
+<body>
+
+<!-- ======== 共有オーバーレイ ======== -->
+<div id="share-overlay" onclick="closeShareOverlay(event)">
+    <div class="share-panel" onclick="event.stopPropagation()">
+        <div class="share-title">🔗 生徒に共有する</div>
+        <div class="share-desc">
+            このURLをロイロノートのWebカードに貼り付けてください。<br>
+            生徒が開くと、単語入力なしでそのままスタートできます。
+        </div>
+        <div class="share-url-box">
+            <textarea id="share-url-text" readonly onclick="this.select()"></textarea>
+            <button class="copy-btn" id="copy-btn" onclick="copyShareUrl()">コピー</button>
+        </div>
+        <div id="share-qr" style="text-align:center;">
+            <canvas id="qr-canvas" style="border:3px solid var(--secondary);border-radius:12px;display:none;"></canvas>
+            <div id="qr-caption" style="font-size:11px;color:#999;margin-top:4px;display:none;">QRコードでも共有できます</div>
+        </div>
+        <div id="share-warn" class="share-warn" style="display:none"></div>
+        <button class="btn secondary" style="font-size:14px;padding:10px 20px;align-self:flex-end;"
+            onclick="closeShareOverlay()">✕ 閉じる</button>
+    </div>
+</div>
+
+<!-- ======== 設定①：枚数 / 保存スロット ======== -->
+<div id="screen-count">
+    <div class="screen-title">古文単語<br>スピードクエスト ⚔️</div>
+
+    <div style="font-size:clamp(14px,2vw,18px);font-weight:900;color:var(--secondary);align-self:flex-start;margin-left:calc(50% - min(300px,46vw));">
+        📂 保存済みセット
+    </div>
+
+    <!-- 検索バー -->
+    <div style="width:min(600px,92vw);position:relative;">
+        <input id="slot-search" type="text" placeholder="🔍 セット名で検索..."
+            oninput="renderSlots()"
+            style="width:100%;font-family:'Noto Serif JP',serif;font-size:15px;
+            padding:10px 14px 10px 14px;border:3px solid var(--secondary);border-radius:12px;
+            outline:none;background:#fff;color:var(--secondary);box-shadow:3px 3px 0 #cbd1d6;">
+    </div>
+
+    <div id="slots-area" style="width:min(600px,92vw);"><div class="slots-empty">まだ保存されていません</div></div>
+    <button id="slots-more-btn" class="btn secondary"
+        style="display:none;font-size:14px;padding:10px 24px;" onclick="toggleSlotsExpand()"></button>
+
+    <hr style="width:min(600px,92vw);border:none;border-top:2px dashed #e6dfd3;margin:2px 0;">
+
+    <!-- 新規作成 -->
+    <div style="font-size:clamp(14px,2vw,18px);font-weight:900;color:var(--secondary);">新しく単語を作る</div>
+    <div class="count-row">
+        <button class="btn secondary" style="font-size:28px;padding:10px 22px;" onclick="changeCount(-1)">−</button>
+        <input id="card-count" type="number" value="5" min="1" max="30">
+        <button class="btn secondary" style="font-size:28px;padding:10px 22px;" onclick="changeCount(+1)">＋</button>
+        <span style="font-size:clamp(16px,2.5vw,22px);font-weight:900;color:var(--secondary);">枚</span>
+    </div>
+    <div class="count-sub">1〜30枚まで設定できます</div>
+    <button class="btn" onclick="goToInput()">次へ　→　単語を入力する</button>
+</div>
+
+<!-- ======== 設定②：単語入力 ======== -->
+<div id="screen-input">
+    <div class="input-header">
+        <div class="input-header-title">⚔️ 単語を入力してください</div>
+        <button class="btn secondary" style="font-size:14px;padding:8px 18px;" onclick="backToCount()">← 枚数を変える</button>
+    </div>
+    <div class="word-list" id="word-list"></div>
+
+    <div class="input-footer">
+        <div class="footer-name-row">
+            <input id="slot-name-input" type="text" placeholder="📝 セット名（例：古文単語 第1章）">
+        </div>
+        <div class="footer-btn-row">
+            <button class="footer-btn-save" onclick="saveAndStart()">💾 保存してスタートへ</button>
+            <button class="footer-btn-start" onclick="goToStart()">✅ 保存せずスタート</button>
+        </div>
+    </div>
+</div>
+
+<!-- ======== スタート画面 ======== -->
+<div id="screen-start">
+    <div id="start-bg"></div>
+    <div class="game-title" style="position:relative;z-index:1;">古文単語<br>スピードクエスト ⚔️</div>
+    <button class="start-btn" style="position:relative;z-index:1;" onclick="startGame()">QUEST START</button>
+    <div style="text-align:center;position:relative;z-index:1;">
+        <div style="font-size:13px;font-weight:900;color:var(--secondary);margin-bottom:8px;letter-spacing:.05em;">🎵 BGM・効果音スタイル</div>
+        <div class="style-selector" id="style-selector">
+            <button class="style-btn" data-style="classic"  onclick="setSoundStyle('classic')">🎵 クラシック</button>
+            <button class="style-btn" data-style="retro"    onclick="setSoundStyle('retro')">👾 8bitレトロ</button>
+            <button class="style-btn" data-style="modern"   onclick="setSoundStyle('modern')">🎮 現代RPG</button>
+            <button class="style-btn" data-style="shooting" onclick="setSoundStyle('shooting')">🚀 シューティング</button>
+        </div>
+    </div>
+    <button class="btn secondary" style="font-size:15px;padding:10px 24px;position:relative;z-index:1;"
+        onclick="showShareOverlay(wordData)">🔗 この単語を生徒に共有する</button>
+    <!-- 読み上げトグル＋スピード -->
+    <div style="position:relative;z-index:1;text-align:center;">
+        <div style="font-size:13px;font-weight:900;color:var(--secondary);margin-bottom:6px;">🔊 単語の読み上げ（日英対応）</div>
+        <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+            <button class="style-btn" id="speech-btn" onclick="toggleSpeech()">🔇 OFF</button>
+            <div id="speech-speed-wrap" style="display:flex;gap:4px;align-items:center;opacity:0.4;pointer-events:none;transition:opacity .2s;">
+                <span style="font-size:11px;color:#888;white-space:nowrap;">速さ:</span>
+                <button class="style-btn speed-btn" data-rate="0.75" onclick="setSpeechRate(0.75)">🐢 遅い</button>
+                <button class="style-btn speed-btn" data-rate="1.0"  onclick="setSpeechRate(1.0)">普通</button>
+                <button class="style-btn speed-btn" data-rate="1.25" onclick="setSpeechRate(1.25)">やや速</button>
+                <button class="style-btn speed-btn" data-rate="1.5"  onclick="setSpeechRate(1.5)">速い</button>
+                <button class="style-btn speed-btn" data-rate="2.0"  onclick="setSpeechRate(2.0)">🐇 超速</button>
+            </div>
+        </div>
+    </div>
+    <div class="start-hint" style="position:relative;z-index:1;">🎺 スタイルを選んでクエスト開始！</div>
+</div>
+
+<!-- ======== 全画面共通 BGMストップボタン ======== -->
+<button id="global-bgm-btn" onclick="toggleBgmStop(event)"
+    style="position:fixed;bottom:16px;right:16px;z-index:9999;
+    font-family:'Dela Gothic One',sans-serif;font-size:14px;
+    padding:10px 16px;border:3px solid var(--secondary);border-radius:14px;
+    background:#fff;color:var(--secondary);cursor:pointer;
+    box-shadow:3px 3px 0 #cbd1d6;transition:all .1s;display:none;">⏸ BGM</button>
+
+<!-- ======== ゲーム画面 ======== -->
+<div id="game-container" onclick="nextStep()">
+    <div id="bg-canvas"></div>
+    <div class="top-ui">
+        <div style="font-size:clamp(14px,2.5vw,26px);font-weight:900;color:var(--secondary);font-family:'Outfit',sans-serif;" id="counter-text">QUEST: 1 / 5</div>
+        <div class="progress-container"><div class="progress-bar" id="p-bar"></div></div>
+        <div class="combo-box" id="combo-text">0 COMBO</div>
+    </div>
+
+    <div class="card-stage">
+        <div class="flash-card" id="card">
+            <div class="word-type" id="w-type">【古文】</div>
+            <div class="main-text" id="m-text">—</div>
+            <div class="hint-text" id="h-text">せーの！で声に出して読もう！</div>
+
+        </div>
+    </div>
+
+    <div class="bottom-ui" style="display:flex;align-items:center;justify-content:center;gap:16px;">
+        <button onclick="prevStep(event)"
+            style="font-family:'Dela Gothic One',sans-serif;font-size:14px;padding:7px 18px;
+            border:3px solid var(--secondary);border-radius:12px;background:#fff;
+            color:var(--secondary);cursor:pointer;box-shadow:3px 3px 0 #cbd1d6;
+            transition:all .1s;white-space:nowrap;"
+            onmousedown="event.stopPropagation()"
+            ontouchstart="event.stopPropagation()">
+            ← 戻る
+        </button>
+        <span>⚔️ タップ または【スペース / →】で進む</span>
+    </div>
+</div>
+
+<!-- ======== クリア画面（game-container 外・fixed） ======== -->
+<div id="result-screen">
+    <div class="clear-title">👑 QUEST CLEAR!!</div>
+    <div style="font-size:clamp(18px,4vw,34px);font-weight:900;color:var(--secondary);text-align:center;">冒険への準備は整った！</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
+        <button class="start-btn" style="font-size:clamp(16px,3vw,24px);" onclick="resetGame(event)">もう一度冒険に出る</button>
+        <button class="start-btn" style="font-size:clamp(14px,2.5vw,18px);background:#fff;color:var(--secondary);box-shadow:0 8px 0 var(--secondary);" onclick="goSetup(event)">⚙️ 単語を変える</button>
+    </div>
+</div>
+
+<script>
+"use strict";
+
+/* ======================================================
+   データ
+   ====================================================== */
+let wordData      = [];
+let currentIdx    = 0;
+let isAnswerPhase = false;
+let combo         = 0;
+
+/* ======================================================
+   URL共有
+   ====================================================== */
+function generateShareUrl(words) {
+    const text = words.map(w => [w.q, w.a, w.h || ''].join('|')).join('\n');
+    const base = location.href.split('?')[0];
+    return `${base}?d=${encodeURIComponent(text)}`;
+}
+
+function parseShareParam(encoded) {
+    try {
+        return decodeURIComponent(encoded).split('\n').map(line => {
+            const parts = line.split('|');
+            if (!parts[0] || !parts[1]) return null;
+            return { q: parts[0].trim(), a: parts[1].trim(), h: parts[2]?.trim() || '全員で声を合わせて読もう！' };
+        }).filter(Boolean);
+    } catch(e) { return null; }
+}
+
+function initFromUrl() {
+    const d = new URLSearchParams(location.search).get('d');
+    if (!d) return;
+    const words = parseShareParam(d);
+    if (!words || words.length === 0) return;
+    wordData = words;
+    document.getElementById('screen-count').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'flex';
+    // 「保存に追加」バナーを表示
+    showImportBanner(words);
+}
+
+function showImportBanner(words) {
+    const existing = document.getElementById('import-banner');
+    if (existing) existing.remove();
+    const banner = document.createElement('div');
+    banner.id = 'import-banner';
+    banner.style.cssText = `
+        position:fixed;top:0;left:0;right:0;z-index:9998;
+        background:var(--accent);color:var(--secondary);
+        font-family:'Dela Gothic One',sans-serif;font-size:clamp(12px,2vw,16px);
+        padding:10px 16px;display:flex;align-items:center;
+        justify-content:center;gap:12px;flex-wrap:wrap;
+        border-bottom:3px solid var(--secondary);
+        box-shadow:0 4px 0 var(--secondary);
+    `;
+    banner.innerHTML = `
+        <span>📥 共有された単語セット（${words.length}枚）を受け取りました</span>
+        <button onclick="importSharedSet()" style="
+            font-family:'Dela Gothic One',sans-serif;font-size:13px;
+            padding:6px 16px;background:var(--secondary);color:#fff;
+            border:none;border-radius:10px;cursor:pointer;white-space:nowrap;
+            box-shadow:0 3px 0 #111;">💾 自分の保存済みに追加する</button>
+        <button onclick="document.getElementById('import-banner').remove()" style="
+            font-family:'Dela Gothic One',sans-serif;font-size:13px;
+            padding:6px 12px;background:#fff;color:var(--secondary);
+            border:2px solid var(--secondary);border-radius:10px;cursor:pointer;">✕</button>
+    `;
+    document.body.prepend(banner);
+}
+
+function importSharedSet() {
+    const slots = loadSlots();
+    if (slots.length >= MAX_SLOTS) {
+        showAlertModal('保存できるセット数の上限（100件）に達しています。不要なセットを削除してから追加してください。');
+        return;
+    }
+    const defaultName = wordData[0]?.q ? `${wordData[0].q} ほか${wordData.length-1}枚` : '共有セット';
+    showInputModal('セット名を入力してください', defaultName, (name) => {
+        if (!name) return;
+        const s = loadSlots();
+        s.push({ name, words: wordData, count: wordData.length, savedAt: new Date().toLocaleDateString('ja-JP') });
+        saveSlots(s);
+        const banner = document.getElementById('import-banner');
+        if (banner) banner.remove();
+        renderSlots();
+        showAlertModal(`「${name}」を保存済みセットに追加しました！`);
+    });
+}
+
+/* 独自アラートモーダル */
+function showAlertModal(message) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9001;
+        background:rgba(44,62,80,.6);backdrop-filter:blur(3px);
+        display:flex;align-items:center;justify-content:center;padding:20px;
+    `;
+    overlay.innerHTML = `
+        <div style="background:#fff;border:5px solid var(--secondary);border-radius:20px;
+            box-shadow:6px 6px 0 var(--secondary);padding:28px 24px;
+            max-width:360px;width:100%;text-align:center;font-family:'Noto Serif JP',serif;">
+            <div style="font-size:15px;font-weight:900;color:var(--secondary);margin-bottom:20px;line-height:1.7;">
+                ${message}
+            </div>
+            <button id="alert-ok" style="
+                font-family:'Dela Gothic One',sans-serif;font-size:14px;
+                padding:10px 36px;background:var(--secondary);color:#fff;
+                border:3px solid var(--secondary);border-radius:12px;cursor:pointer;
+                box-shadow:0 4px 0 #111;">OK</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#alert-ok').onclick = () => overlay.remove();
+}
+
+/* 独自テキスト入力モーダル */
+function showInputModal(message, defaultVal, onOk) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9001;
+        background:rgba(44,62,80,.6);backdrop-filter:blur(3px);
+        display:flex;align-items:center;justify-content:center;padding:20px;
+    `;
+    overlay.innerHTML = `
+        <div style="background:#fff;border:5px solid var(--secondary);border-radius:20px;
+            box-shadow:6px 6px 0 var(--secondary);padding:28px 24px;
+            max-width:380px;width:100%;font-family:'Noto Serif JP',serif;">
+            <div style="font-size:15px;font-weight:900;color:var(--secondary);margin-bottom:14px;">
+                ${message}
+            </div>
+            <input id="modal-input" type="text" value="${defaultVal}"
+                style="width:100%;font-size:15px;padding:10px 12px;
+                border:3px solid var(--secondary);border-radius:10px;outline:none;
+                margin-bottom:16px;box-sizing:border-box;">
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button id="modal-cancel" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:14px;
+                    padding:10px 20px;background:#fff;color:var(--secondary);
+                    border:3px solid var(--secondary);border-radius:12px;cursor:pointer;
+                    box-shadow:0 4px 0 #aaa;">キャンセル</button>
+                <button id="modal-ok" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:14px;
+                    padding:10px 24px;background:var(--secondary);color:#fff;
+                    border:3px solid var(--secondary);border-radius:12px;cursor:pointer;
+                    box-shadow:0 4px 0 #111;">保存する</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const inp = overlay.querySelector('#modal-input');
+    inp.focus(); inp.select();
+    overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#modal-ok').onclick = () => {
+        const v = inp.value.trim();
+        overlay.remove();
+        onOk(v || defaultVal);
+    };
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { const v = inp.value.trim(); overlay.remove(); onOk(v || defaultVal); }
+        if (e.key === 'Escape') overlay.remove();
+    });
+}
+
+function showShareOverlay(words) {
+    if (!words || words.length === 0) { alert('単語データがありません。'); return; }
+    const url = generateShareUrl(words);
+    document.getElementById('share-url-text').value = url;
+    document.getElementById('copy-btn').textContent = 'コピー';
+    document.getElementById('copy-btn').classList.remove('copied');
+    const warnDiv = document.getElementById('share-warn');
+    // QRコード生成（ローカルライブラリ使用）
+    try {
+        const canvas = document.getElementById('qr-canvas');
+        const caption = document.getElementById('qr-caption');
+        if (url.length <= 2000) {
+            canvas.style.display = 'inline-block';
+            caption.style.display = 'block';
+            canvas.width = 160; canvas.height = 160;
+            QrCreator.render({ text: url, radius: 0.5, ecLevel: 'M', fill: '#2c3e50', size: 160 }, canvas);
+            warnDiv.style.display = 'none';
+        } else {
+            canvas.style.display = 'none';
+            caption.style.display = 'none';
+            warnDiv.style.display = 'block';
+            warnDiv.textContent = `⚠️ 単語数が多いためQRコードは表示できません（${url.length}文字）。URLをコピーしてロイロに貼ってください。`;
+        }
+    } catch(e) {
+        console.warn('QR生成エラー:', e);
+    }
+    document.getElementById('share-overlay').classList.add('show');
+}
+
+function closeShareOverlay(e) {
+    if (e && e.target !== document.getElementById('share-overlay')) return;
+    document.getElementById('share-overlay').classList.remove('show');
+}
+
+function copyShareUrl() {
+    const text = document.getElementById('share-url-text').value;
+    const btn  = document.getElementById('copy-btn');
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = '✓ コピー済み'; btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2500);
+    }).catch(() => {
+        document.getElementById('share-url-text').select();
+        btn.textContent = '↑ 選択してコピー';
+    });
+}
+
+/* ======================================================
+   localStorage 保存システム
+   ====================================================== */
+const SLOTS_KEY  = 'tangoquiz_slots_v1';
+const MAX_SLOTS  = 100;
+const DEFAULT_SHOW = 10;
+
+function loadSlots() {
+    try { return JSON.parse(localStorage.getItem(SLOTS_KEY) || '[]'); }
+    catch(e) { return []; }
+}
+
+function saveSlots(slots) {
+    try { localStorage.setItem(SLOTS_KEY, JSON.stringify(slots)); }
+    catch(e) { console.warn('保存失敗', e); }
+}
+
+let slotsExpanded = false;
+
+/* --------------------------------------------------------
+   ★ バグ修正：インデックス管理を「元配列のインデックス」で統一
+      renderSlots はカードごとに元配列(正順)のインデックス origIdx を計算して渡す
+      deleteSlot / loadSlotAndStart / showShareOverlay はその origIdx を直接使う
+   -------------------------------------------------------- */
+function renderSlots() {
+    const slots   = loadSlots();                         // 元の配列（古い順）
+    const reversed = slots.slice().reverse();            // 表示用（新しい順）
+    const query   = (document.getElementById('slot-search')?.value || '').trim().toLowerCase();
+    const moreBtn = document.getElementById('slots-more-btn');
+    const area    = document.getElementById('slots-area');
+
+    // 検索フィルタ（元インデックス付きで保持）
+    const filtered = reversed
+        .map((slot, ri) => ({ slot, origIdx: slots.length - 1 - ri }))
+        .filter(({ slot }) => !query || slot.name.toLowerCase().includes(query));
+
+    const showAll = query || slotsExpanded;
+    const visible = showAll ? filtered : filtered.slice(0, DEFAULT_SHOW);
+    const hidden  = filtered.length - visible.length;
+
+    area.innerHTML = '';
+    if (filtered.length === 0) {
+        area.innerHTML = `<div class="slots-empty">${query ? '該当するセットがありません' : 'まだ保存されていません'}</div>`;
+        moreBtn.style.display = 'none';
+        return;
+    }
+
+    visible.forEach(({ slot, origIdx }) => {
+        const card = document.createElement('div');
+        card.className = 'slot-card';
+        card.innerHTML = `
+            <div class="slot-info">
+                <div class="slot-name">${slot.name}</div>
+                <div class="slot-meta">${slot.count}枚 ／ ${slot.savedAt}</div>
+            </div>
+            <button class="slot-btn share" title="共有URLを生成" onclick="shareSlot(${origIdx})">🔗</button>
+            <button class="slot-btn edit"  title="単語を編集" onclick="openEditModal(${origIdx})">✏️</button>
+            <button class="slot-btn start" onclick="loadSlotAndStart(${origIdx})">⚔️ スタート</button>
+            <button class="slot-btn del"   title="削除" onclick="deleteSlot(${origIdx})">🗑</button>
+        `;
+        area.appendChild(card);
+    });
+
+    if (!query && filtered.length > DEFAULT_SHOW) {
+        moreBtn.style.display = 'inline-block';
+        moreBtn.textContent = slotsExpanded
+            ? '▲ 折りたたむ'
+            : `📋 すべて見る（残り ${hidden} 件）`;
+    } else {
+        moreBtn.style.display = 'none';
+    }
+}
+
+function toggleSlotsExpand() {
+    slotsExpanded = !slotsExpanded;
+    renderSlots();
+}
+
+/* ★ origIdx を直接 slots[origIdx] で参照 */
+function deleteSlot(origIdx) {
+    const slots = loadSlots();
+    const slot  = slots[origIdx];
+    if (!slot) return;
+    // confirm()はiframe/WebView環境でブロックされるため独自モーダルを使用
+    showConfirmModal(`「${slot.name}」を削除しますか？`, () => {
+        const s = loadSlots();
+        s.splice(origIdx, 1);
+        saveSlots(s);
+        slotsExpanded = false;
+        renderSlots();
+    });
+}
+
+/* 独自確認モーダル（confirm()の代替） */
+function showConfirmModal(message, onOk) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9000;
+        background:rgba(44,62,80,.6);backdrop-filter:blur(3px);
+        display:flex;align-items:center;justify-content:center;padding:20px;
+    `;
+    overlay.innerHTML = `
+        <div style="background:#fff;border:5px solid var(--secondary);border-radius:20px;
+            box-shadow:6px 6px 0 var(--secondary);padding:28px 24px;
+            max-width:360px;width:100%;text-align:center;font-family:'Noto Serif JP',serif;">
+            <div style="font-size:16px;font-weight:900;color:var(--secondary);margin-bottom:20px;line-height:1.6;">
+                ${message}
+            </div>
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <button id="modal-cancel" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:14px;
+                    padding:10px 24px;background:#fff;color:var(--secondary);
+                    border:3px solid var(--secondary);border-radius:12px;cursor:pointer;
+                    box-shadow:0 4px 0 #aaa;">キャンセル</button>
+                <button id="modal-ok" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:14px;
+                    padding:10px 24px;background:var(--primary);color:#fff;
+                    border:3px solid var(--secondary);border-radius:12px;cursor:pointer;
+                    box-shadow:0 4px 0 var(--secondary);">削除する</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#modal-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#modal-ok').onclick = () => { overlay.remove(); onOk(); };
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+/* ★ origIdx で直接参照 */
+function loadSlotAndStart(origIdx) {
+    const slots = loadSlots();
+    const slot  = slots[origIdx];
+    if (!slot) return;
+    wordData = slot.words;
+    document.getElementById('screen-count').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'flex';
+}
+
+/* ★ 共有ボタン用（renderSlots内でインライン onclick を使えないためラップ） */
+function shareSlot(origIdx) {
+    const slots = loadSlots();
+    const slot  = slots[origIdx];
+    if (slot) showShareOverlay(slot.words);
+}
+
+/* ======================================================
+   単語セット編集モーダル（任意の単語を削除 or 単語名変更）
+   ====================================================== */
+function openEditModal(origIdx) {
+    const slots = loadSlots();
+    const slot  = slots[origIdx];
+    if (!slot) return;
+
+    // ── ワーキングコピーを作る（変更をいったんメモリで管理）
+    let workWords = slot.words.map((w, i) => ({ ...w, _keep: true, _origI: i }));
+
+    const overlay = document.createElement('div');
+    overlay.id = 'edit-overlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;z-index:9100;
+        background:rgba(44,62,80,.65);backdrop-filter:blur(4px);
+        display:flex;align-items:center;justify-content:center;padding:16px;
+    `;
+
+    function renderModal() {
+        overlay.innerHTML = `
+          <div style="
+              background:var(--bg-color);
+              background-image:radial-gradient(#e6dfd3 1px,transparent 1px);
+              background-size:20px 20px;
+              border:5px solid var(--secondary);border-radius:24px;
+              box-shadow:8px 8px 0 var(--secondary);
+              width:min(560px,96vw);max-height:90vh;
+              display:flex;flex-direction:column;overflow:hidden;">
+
+            <!-- ヘッダー -->
+            <div style="background:var(--secondary);color:#fff;padding:14px 20px;
+                display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+              <div>
+                <div style="font-family:'Dela Gothic One',sans-serif;font-size:clamp(14px,3vw,18px);
+                    text-shadow:2px 2px 0 var(--accent);">✏️ 単語を編集</div>
+                <div style="font-size:12px;opacity:.8;margin-top:2px;">${slot.name}</div>
+              </div>
+              <button onclick="document.getElementById('edit-overlay').remove()"
+                  style="font-size:20px;background:none;border:none;color:#fff;cursor:pointer;padding:4px 8px;">✕</button>
+            </div>
+
+            <!-- セット名変更 -->
+            <div style="padding:12px 16px 0;flex-shrink:0;">
+              <div style="font-size:12px;font-weight:900;color:var(--secondary);margin-bottom:4px;">📝 セット名</div>
+              <input id="edit-set-name" type="text" value="${slot.name}"
+                style="width:100%;font-family:'Noto Serif JP',serif;font-size:14px;
+                padding:8px 12px;border:3px solid var(--secondary);border-radius:10px;
+                outline:none;background:#fff;color:var(--secondary);box-sizing:border-box;">
+            </div>
+
+            <!-- 操作ヘッダー -->
+            <div style="padding:10px 16px 6px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:12px;font-weight:900;color:var(--secondary);">
+                単語カード（チェックを外すと削除対象）
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button onclick="editToggleAll(true)" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:11px;padding:5px 10px;
+                    background:#fff;color:var(--secondary);border:2px solid var(--secondary);
+                    border-radius:8px;cursor:pointer;">✅ 全選択</button>
+                <button onclick="editToggleAll(false)" style="
+                    font-family:'Dela Gothic One',sans-serif;font-size:11px;padding:5px 10px;
+                    background:#fff;color:var(--primary);border:2px solid var(--primary);
+                    border-radius:8px;cursor:pointer;">☐ 全解除</button>
+              </div>
+            </div>
+
+            <!-- 単語リスト（スクロール） -->
+            <div id="edit-word-list" style="flex:1;overflow-y:auto;padding:0 16px 8px;display:flex;flex-direction:column;gap:8px;">
+              ${workWords.map((w, vi) => `
+                <label style="display:flex;align-items:flex-start;gap:10px;
+                    background:#fff;border:2.5px solid ${w._keep ? 'var(--secondary)' : '#ddd'};
+                    border-radius:12px;padding:10px 12px;cursor:pointer;
+                    opacity:${w._keep ? '1' : '0.45'};transition:all .15s;">
+                  <input type="checkbox" data-vi="${vi}" ${w._keep ? 'checked' : ''}
+                    onchange="editToggleWord(${vi}, this.checked)"
+                    style="width:18px;height:18px;margin-top:2px;flex-shrink:0;cursor:pointer;accent-color:var(--secondary);">
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:900;font-size:clamp(13px,2.5vw,15px);color:var(--secondary);
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${w.q}</div>
+                    <div style="font-size:12px;color:#666;margin-top:2px;
+                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">→ ${w.a}</div>
+                    ${w.h && w.h !== '全員で声を合わせて読もう！' ? `<div style="font-size:11px;color:#999;margin-top:1px;">💡 ${w.h}</div>` : ''}
+                  </div>
+                </label>
+              `).join('')}
+            </div>
+
+            <!-- フッター -->
+            <div style="padding:12px 16px;border-top:3px solid #e6dfd3;flex-shrink:0;
+                display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
+                background:rgba(253,251,247,.97);">
+              <div id="edit-count-label" style="font-size:13px;font-weight:900;color:var(--secondary);">
+                ${workWords.filter(w=>w._keep).length} / ${workWords.length}枚 選択中
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+                <button onclick="document.getElementById('edit-overlay').remove()"
+                    style="font-family:'Dela Gothic One',sans-serif;font-size:13px;padding:9px 18px;
+                    background:#fff;color:var(--secondary);border:3px solid var(--secondary);
+                    border-radius:12px;cursor:pointer;box-shadow:0 3px 0 #aaa;">キャンセル</button>
+                <button onclick="saveEditModal(${origIdx})"
+                    style="font-family:'Dela Gothic One',sans-serif;font-size:13px;padding:9px 20px;
+                    background:var(--secondary);color:#fff;border:3px solid var(--secondary);
+                    border-radius:12px;cursor:pointer;box-shadow:0 4px 0 #111;">💾 保存する</button>
+              </div>
+            </div>
+          </div>
+        `;
+        // workWordsをoverlayに紐付け（再レンダリング不要にするため参照渡し）
+        overlay._workWords = workWords;
+    }
+
+    renderModal();
+    document.body.appendChild(overlay);
+}
+
+function editToggleWord(vi, checked) {
+    const overlay = document.getElementById('edit-overlay');
+    if (!overlay?._workWords) return;
+    overlay._workWords[vi]._keep = checked;
+    // ラベルのスタイルを即時更新
+    const label = document.querySelector(`#edit-word-list input[data-vi="${vi}"]`)?.closest('label');
+    if (label) {
+        label.style.opacity = checked ? '1' : '0.45';
+        label.style.borderColor = checked ? 'var(--secondary)' : '#ddd';
+    }
+    // カウント更新
+    const kept = overlay._workWords.filter(w => w._keep).length;
+    const el = document.getElementById('edit-count-label');
+    if (el) el.textContent = `${kept} / ${overlay._workWords.length}枚 選択中`;
+}
+
+function editToggleAll(keepAll) {
+    const overlay = document.getElementById('edit-overlay');
+    if (!overlay?._workWords) return;
+    overlay._workWords.forEach((w, vi) => {
+        w._keep = keepAll;
+        const label = document.querySelector(`#edit-word-list input[data-vi="${vi}"]`)?.closest('label');
+        if (label) {
+            label.style.opacity = keepAll ? '1' : '0.45';
+            label.style.borderColor = keepAll ? 'var(--secondary)' : '#ddd';
+        }
+        const cb = document.querySelector(`#edit-word-list input[data-vi="${vi}"]`);
+        if (cb) cb.checked = keepAll;
+    });
+    const kept = keepAll ? overlay._workWords.length : 0;
+    const el = document.getElementById('edit-count-label');
+    if (el) el.textContent = `${kept} / ${overlay._workWords.length}枚 選択中`;
+}
+
+function saveEditModal(origIdx) {
+    const overlay = document.getElementById('edit-overlay');
+    if (!overlay?._workWords) return;
+
+    const newWords = overlay._workWords.filter(w => w._keep).map(({q, a, h}) => ({q, a, h}));
+    if (newWords.length === 0) {
+        showAlertModal('1枚以上の単語が必要です。');
+        return;
+    }
+
+    const newName = document.getElementById('edit-set-name')?.value.trim();
+    const slots = loadSlots();
+    slots[origIdx] = {
+        ...slots[origIdx],
+        name:    newName || slots[origIdx].name,
+        words:   newWords,
+        count:   newWords.length,
+        savedAt: slots[origIdx].savedAt   // 保存日はそのまま
+    };
+    saveSlots(slots);
+    overlay.remove();
+    renderSlots();
+    showAlertModal(`「${newName || slots[origIdx].name}」を保存しました（${newWords.length}枚）`);
+}
+
+
+/* ======================================================
+   BGMストップ／再開ボタン
+   ====================================================== */
+let bgmStopped = false;
+
+function toggleBgmStop(e) {
+    if (e) e.stopPropagation();
+    const btn = document.getElementById('global-bgm-btn');
+    bgmStopped = !bgmStopped;
+    if (bgmStopped) {
+        stopAllBgm();
+        if (btn) { btn.textContent = '▶ BGM'; btn.style.background = '#ffe8e8'; btn.style.color = '#cc2233'; }
+    } else {
+        bgmStopped = false;
+        const gameVisible = document.getElementById('game-container').style.opacity === '1';
+        if (gameVisible) startGameBgm(); else startPrologue();
+        if (btn) { btn.textContent = '⏸ BGM'; btn.style.background = '#fff'; btn.style.color = 'var(--secondary)'; }
+    }
+}
+
+/* ======================================================
+   設定①：枚数
+   ====================================================== */
+function changeCount(d) {
+    startPrologue();
+    const el = document.getElementById('card-count');
+    let v = parseInt(el.value) + d;
+    el.value = Math.max(1, Math.min(30, v));
+}
+
+function goToInput() {
+    startPrologue();
+    const n = Math.max(1, Math.min(30, parseInt(document.getElementById('card-count').value) || 5));
+    document.getElementById('card-count').value = n;
+    buildWordList(n);
+    document.getElementById('screen-count').style.display = 'none';
+    document.getElementById('screen-input').style.display = 'flex';
+}
+
+function backToCount() {
+    stopAllBgm();
+    document.getElementById('screen-input').style.display = 'none';
+    document.getElementById('screen-count').style.display = 'flex';
+    setTimeout(startPrologue, 50);
+}
+
+/* ======================================================
+   設定②：単語入力フォーム生成
+   ====================================================== */
+function buildWordList(n) {
+    const list = document.getElementById('word-list');
+    const old  = Array.from(list.querySelectorAll('.word-entry')).map(e => ({
+        w: e.querySelector('input.inp-word').value,
+        m: e.querySelector('input.inp-mean').value,
+        h: e.querySelector('input.inp-hint').value
+    }));
+    list.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+        const o = old[i] || { w:'', m:'', h:'' };
+        const div = document.createElement('div');
+        div.className = 'word-entry';
+        div.innerHTML = `
+            <div class="word-entry-head">
+                <span class="num">${i+1}</span>カード ${i+1}
+            </div>
+            <div class="word-entry-body">
+                <input class="inp-word" type="text" placeholder="単語・古文・英単語など" value="${o.w}" autocomplete="off" spellcheck="false">
+                <input class="inp-mean" type="text" placeholder="意味（現代語訳）" value="${o.m}" autocomplete="off" spellcheck="false">
+                <input class="inp-hint" type="text" placeholder="ヒント・解説（省略OK）" value="${o.h}" autocomplete="off" spellcheck="false">
+            </div>`;
+        list.appendChild(div);
+    }
+}
+
+function goToStart() {
+    const entries = document.querySelectorAll('.word-entry');
+    const parsed  = [];
+    for (const e of entries) {
+        const w = e.querySelector('input.inp-word').value.trim();
+        const m = e.querySelector('input.inp-mean').value.trim();
+        const h = e.querySelector('input.inp-hint').value.trim();
+        if (!w || !m) {
+            showAlertModal(`カード ${e.querySelector('.num').textContent} の単語または意味が空です。`);
+            e.querySelector('input.inp-word').focus();
+            return;
+        }
+        parsed.push({ q: w, a: m, h: h || '全員で声を合わせて読もう！' });
+    }
+    wordData = parsed;
+    document.getElementById('screen-input').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'flex';
+}
+
+function saveAndStart() {
+    const entries = document.querySelectorAll('.word-entry');
+    const parsed  = [];
+    for (const e of entries) {
+        const w = e.querySelector('input.inp-word').value.trim();
+        const m = e.querySelector('input.inp-mean').value.trim();
+        const h = e.querySelector('input.inp-hint').value.trim();
+        if (!w || !m) {
+            showAlertModal(`カード ${e.querySelector('.num').textContent} の単語または意味が空です。`);
+            e.querySelector('input.inp-word').focus();
+            return;
+        }
+        parsed.push({ q: w, a: m, h: h || '全員で声を合わせて読もう！' });
+    }
+    const slots = loadSlots();
+    if (slots.length >= MAX_SLOTS) {
+        showAlertModal(`保存できるのは最大${MAX_SLOTS}セットです。不要なセットを削除してから保存してください。`);
+        return;
+    }
+    const nameInput   = document.getElementById('slot-name-input');
+    const defaultName = parsed[0]?.q ? `${parsed[0].q} ほか${parsed.length - 1}枚` : `セット${slots.length + 1}`;
+    const name        = (nameInput?.value.trim()) || defaultName;
+    slots.push({ name, words: parsed, count: parsed.length, savedAt: new Date().toLocaleDateString('ja-JP') });
+    saveSlots(slots);
+    renderSlots();
+    if (nameInput) nameInput.value = '';
+    wordData = parsed;
+    document.getElementById('screen-input').style.display = 'none';
+    document.getElementById('screen-start').style.display = 'flex';
+}
+
+function goSetup(e) {
+    if (e) e.stopPropagation();
+    stopAllBgm();
+    document.getElementById('result-screen').style.display = 'none';
+    document.getElementById('game-container').style.opacity = '0';
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('screen-count').style.display = 'flex';
+    const bgmBtn = document.getElementById('global-bgm-btn');
+    if (bgmBtn) bgmBtn.style.display = 'none';
+    setTimeout(startPrologue, 50);
+}
+
+/* ======================================================
+   BGM管理
+   ====================================================== */
+let audioCtx    = null;
+let bgmInterval = null;
+let bgmStep     = 0;
+let prologueInterval = null;
+let prologueStep     = 0;
+
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    else audioCtx.resume().catch(() => {});
+}
+
+function stopAllBgm() {
+    if (prologueInterval) { clearInterval(prologueInterval); prologueInterval = null; }
+    if (bgmInterval)      { clearInterval(bgmInterval);      bgmInterval = null; }
+}
+
+function startPrologue() {
+    if (prologueInterval) return;
+    ensureAudio();
+    stopAllBgm();
+    prologueStep = 0;
+    prologueInterval = setInterval(prologueTick, 320);
+}
+function stopPrologue() { stopAllBgm(); }
+
+function startGameBgm() {
+    stopAllBgm();
+    bgmStep = 0;
+    bgmInterval = setInterval(playBgmStep, STYLES[soundStyle].tempo);
+}
+function stopGameBgm() { stopAllBgm(); }
+
+/* ======================================================
+   サウンドスタイル設定
+   ====================================================== */
+const STYLES = {
+    classic:  { label:'🎵 クラシック',     tempo:190 },
+    retro:    { label:'👾 8bitレトロ',     tempo:148 },
+    modern:   { label:'🎮 現代RPG',        tempo:190 },
+    shooting: { label:'🚀 シューティング', tempo:122 }
+};
+let soundStyle = (() => {
+    const s = localStorage.getItem('tangoquiz_sound');
+    return (s && STYLES[s]) ? s : 'classic';
+})();
+
+function setSoundStyle(s) {
+    soundStyle = s;
+    localStorage.setItem('tangoquiz_sound', s);
+    document.querySelectorAll('.style-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.style === s));
+    ensureAudio();
+    stopAllBgm();
+    bgmStep = 0;
+    bgmInterval = setInterval(playBgmStep, STYLES[soundStyle].tempo);
+    updateBg(s);
+}
+
+/* ======================================================
+   ピクセルアート描画ヘルパー
+   ====================================================== */
+function pixelArt(ox, oy, pal, rows, sz=5) {
+    return rows.map((row, y) =>
+        [...row].map((ch, x) =>
+            pal[ch] ? `<rect x="${ox+x*sz}" y="${oy+y*sz}" width="${sz}" height="${sz}" fill="${pal[ch]}"/>` : ''
+        ).join('')
+    ).join('');
+}
+
+/* ======================================================
+   読み上げ機能
+   ====================================================== */
+let speechEnabled = (localStorage.getItem('tangoquiz_speech') === '1');
+let speechRate    = parseFloat(localStorage.getItem('tangoquiz_speech_rate') || '1.0');
+
+function speak(text) {
+    if (!speechEnabled || !('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const isJa = /[\u3040-\u309f\u30a0-\u30ff\u4e00-\u9fff\u3000-\u303f]/.test(text);
+    const utt  = new SpeechSynthesisUtterance(text.trim());
+    utt.lang   = isJa ? 'ja-JP' : 'en-US';
+    utt.rate   = isJa ? 1.35 : 1.25;
+    utt.pitch  = isJa ? 1.25 : 1.1;
+    utt.volume = 1.0;
+    const voices = speechSynthesis.getVoices();
+    if (isJa && voices.length > 0) {
+        const preferred = ['Kyoko','O-ren','Hattori','Otoya','Google 日本語'];
+        for (const name of preferred) {
+            const v = voices.find(v => v.lang.startsWith('ja') && v.name.includes(name));
+            if (v) { utt.voice = v; break; }
+        }
+    }
+    speechSynthesis.speak(utt);
+}
+
+function setSpeechRate(rate) {
+    speechRate = rate;
+    localStorage.setItem('tangoquiz_speech_rate', String(rate));
+    document.querySelectorAll('.speed-btn').forEach(b =>
+        b.classList.toggle('active', parseFloat(b.dataset.rate) === rate));
+}
+
+function toggleSpeech() {
+    speechEnabled = !speechEnabled;
+    localStorage.setItem('tangoquiz_speech', speechEnabled ? '1' : '0');
+    const btn = document.getElementById('speech-btn');
+    if (btn) {
+        btn.textContent = speechEnabled ? '🔊 ON' : '🔇 OFF';
+        btn.classList.toggle('active', speechEnabled);
+    }
+    if (speechEnabled) speak('読み上げをオンにしました');
+    else speechSynthesis.cancel();
+}
+
+/* ======================================================
+   背景HTML生成
+   ====================================================== */
+function getBgHtml(s) {
+    if (s === 'classic') return '';
+
+    if (s === 'retro') {
+        const stars = Array.from({length:35},(_,i)=>`
+            <circle cx="${(i*73+11)%100}%" cy="${(i*47+7)%70}%" r="${i%3===0?2:1}"
+            fill="white" style="animation:twinkle ${1+i%3}s ${(i*.3)%2}s infinite"/>`).join('');
+        return `<div style="position:absolute;inset:0;background:linear-gradient(180deg,#000818 70%,#001a00 100%);">
+          <svg style="position:absolute;inset:0;width:100%;height:100%">${stars}</svg>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:52px;overflow:hidden">
+            <div style="display:flex;animation:retroScroll 3s linear infinite;width:200%">
+              ${Array.from({length:32},(_,i)=>`<div style="width:52px;height:52px;flex-shrink:0;background:${i%2===0?'#006600':'#004400'};border:2px solid #00aa00;box-sizing:border-box;display:flex;flex-wrap:wrap;">${Array.from({length:4},()=>`<div style="width:22px;height:22px;margin:2px;background:#008800;border:1px solid #00cc00;"></div>`).join('')}</div>`).join('')}
+            </div>
+          </div>
+          <div style="position:absolute;bottom:52px;left:10%;font-size:36px;animation:retroChar .55s steps(1) infinite">🧑‍💻</div>
+          <div style="position:absolute;top:20%;font-size:32px;animation:retroEnemy 6s linear infinite">👾</div>
+          <div style="position:absolute;top:38%;font-size:28px;animation:retroEnemy 9s 2s linear infinite">👾</div>
+          <div style="position:absolute;top:55%;font-size:24px;animation:retroEnemy 7s 4s linear infinite">👾</div>
+        </div>`;
+    }
+
+    if (s === 'modern') {
+        const heroP={H:'#553311',h:'#8a5522',B:'#ffcc00',b:'#cc9900',R:'#cc2200',
+                     F:'#f4b87e',f:'#c07848',E:'#110000',
+                     S:'#2255cc',s:'#4477ee',G:'#cc8800',g:'#aa6600',
+                     P:'#664422',p:'#885533',D:'#221100'};
+        const heroR=['..HhHhH..','..HhhhHh.','..BBBBB..','.HBbRbBH.',
+                     '..FFFFFF.','..FEfEFf.','..FfFFF..',
+                     '.GSsSSSG.','.gSsSssg.','..PPpPP..',
+                     '..PpPpPP.','.DD.PPD..','.DD...DD.'];
+        const sageP={W:'#eeeeff',w:'#bbbbdd',C:'#443322',c:'#665544',
+                     F:'#f4c890',f:'#c09060',E:'#110000',k:'#ddeeff',
+                     V:'#7733aa',v:'#9955cc',D:'#221133'};
+        const sageR=['...WWWW..','..WwwwWW.','.WCCCCCCW','..CCCCCc.',
+                     '..FFFFFF.','..FEfEFf.','..FkkkFF.',
+                     '.VVVVVVV.','.VvVVVvV.','..VVvVVV.',
+                     '..VvVVvV.','..DD.DD..','..DD.DD..'];
+        const warP ={H:'#cc4422',h:'#ee6633',M:'#777788',m:'#99aabb',
+                     F:'#f4b87e',f:'#c07848',E:'#110000',
+                     A:'#aabbcc',a:'#889aaa',G:'#cc8800',
+                     P:'#554422',p:'#776633',D:'#222233'};
+        const warR =['.mMMMMMMm','.MMmMmMMM','..MMFFFF.','.MFEfEFF.',
+                     '.MFFFFFMM','.AAAAAAAA','.AaAaAaAA','.AAAGAAAA',
+                     '..AAGAGAA','..PPpAPP.','..PpPaPP.','.DD.AAD..','.DD..DD..'];
+        const magP ={Y:'#226644',y:'#338855',Q:'#cceecc',q:'#aaccaa',
+                     F:'#f4c890',f:'#c09060',E:'#110000',
+                     T:'#44bb66',t:'#66dd88',G:'#ffcc44',D:'#113322'};
+        const magR =['....YYY..','...YYyYY.','..YyyyYY.',
+                     '..QQQQQQ.','..QEfEQf.','..QQfQQQ.',
+                     '.TTTTTTT.','.TtTTTtT.','.TTtTtTT.',
+                     '..TTTGTT.','.GTTTTGT.','..DD.DD..','..DD.DD..'];
+
+        const charW=9*5, charH=13*5;
+        const party = [
+            pixelArt(0,           0, heroP, heroR, 5),
+            pixelArt(charW+6,     0, sageP, sageR, 5),
+            pixelArt((charW+6)*2, 0, warP,  warR,  5),
+            pixelArt((charW+6)*3, 0, magP,  magR,  5),
+        ].join('');
+
+        const river = `
+          <path d="M0,40 Q60,100 80,180 Q100,260 70,340 Q40,420 0,480"
+            fill="none" stroke="#1a44aa" stroke-width="52" stroke-linecap="round"/>
+          <path d="M0,40 Q60,100 80,180 Q100,260 70,340 Q40,420 0,480"
+            fill="none" stroke="#2266cc" stroke-width="38" stroke-linecap="round"/>
+          <path d="M0,40 Q60,100 80,180 Q100,260 70,340 Q40,420 0,480"
+            fill="none" stroke="#55aaff" stroke-width="18" stroke-linecap="round"
+            stroke-dasharray="50,35" opacity=".5" style="animation:waterShim 2s ease-in-out infinite"/>`;
+
+        const mountains = `
+          <polygon points="870,620 900,430 935,475 965,360 995,405 1000,360 1000,620" fill="#5a6674"/>
+          <polygon points="870,620 900,430 930,470" fill="#6a7688"/>
+          <polygon points="965,360 985,320 1000,360 1000,410" fill="#6a7688"/>
+          <polygon points="900,430 922,378 944,430" fill="#ddeeff" opacity=".85"/>
+          <polygon points="965,360 980,330 995,362" fill="#ddeeff" opacity=".8"/>
+          <polygon points="748,620 776,470 816,520 858,410 900,460 900,620" fill="#4e5e6e" opacity=".85"/>
+          <polygon points="776,470 805,418 834,470" fill="#ddeeff" opacity=".7"/>
+          <polygon points="748,620 776,470 800,500" fill="#6a7a8a"/>`;
+
+        const dqTree = (cx,cy,r=20) =>
+            `<ellipse cx="${cx}" cy="${cy+r*.35}" rx="${r*.9}" ry="${r*.55}" fill="#164810" opacity=".55"/>
+             <circle  cx="${cx}" cy="${cy}"       r="${r}"     fill="#267020"/>
+             <ellipse cx="${cx}" cy="${cy}"       rx="${r*.78}" ry="${r*.72}" fill="#38a030"/>
+             <ellipse cx="${cx-r*.18}" cy="${cy-r*.22}" rx="${r*.32}" ry="${r*.22}" fill="#55cc44" opacity=".55"/>`;
+
+        const castle = `
+          <rect x="582" y="122" width="176" height="156" rx="3" fill="#6a6858" stroke="#4a4838" stroke-width="3"/>
+          ${[582,602,622,642,662,682,702,722,742].map(x=>`<rect x="${x}" y="119" width="11" height="9" fill="#7a7860"/>`).join('')}
+          ${[582,602,622,642,662,682,702,722,742].map(x=>`<rect x="${x}" y="271" width="11" height="9" fill="#7a7860"/>`).join('')}
+          <circle cx="582" cy="122" r="23" fill="#888876" stroke="#4a4838" stroke-width="2.5"/>
+          <circle cx="758" cy="122" r="23" fill="#888876" stroke="#4a4838" stroke-width="2.5"/>
+          <circle cx="582" cy="278" r="23" fill="#888876" stroke="#4a4838" stroke-width="2.5"/>
+          <circle cx="758" cy="278" r="23" fill="#888876" stroke="#4a4838" stroke-width="2.5"/>
+          <circle cx="584" cy="124" r="15" fill="#585848" opacity=".45"/>
+          <circle cx="760" cy="124" r="15" fill="#585848" opacity=".45"/>
+          <circle cx="582" cy="122" r="8"  fill="#443322"/>
+          <circle cx="758" cy="122" r="8"  fill="#443322"/>
+          <circle cx="582" cy="278" r="8"  fill="#443322"/>
+          <circle cx="758" cy="278" r="8"  fill="#443322"/>
+          <rect x="600" y="140" width="140" height="124" fill="#989878"/>
+          <rect x="628" y="158" width="80"  height="86"  fill="#bb4433" stroke="#882222" stroke-width="2"/>
+          <rect x="638" y="164" width="60"  height="74"  fill="#cc5544"/>
+          <rect x="650" y="170" width="13"  height="17"  fill="#ffcc8844" rx="2"/>
+          <rect x="675" y="170" width="13"  height="17"  fill="#ffcc8844" rx="2"/>
+          <rect x="710" y="195" width="26"  height="44"  fill="#585848" opacity=".45" rx="2"/>
+          <line x1="670" y1="158" x2="670" y2="128" stroke="#554" stroke-width="3"/>
+          <polygon points="670,128 694,136 670,144" fill="#cc2233"/>
+          <rect x="651" y="256" width="38"  height="22"  fill="#443322" rx="3"/>
+          <ellipse cx="670" cy="256" rx="19" ry="8" fill="#332211"/>`;
+
+        return `<div style="position:absolute;inset:0;overflow:hidden">
+          <svg style="position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated"
+               viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="rGrass" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
+                <rect x="0"  y="0"  width="32" height="32" fill="#4aaa3a"/>
+                <rect x="0"  y="0"  width="16" height="16" fill="#50b040" opacity=".28"/>
+                <rect x="16" y="16" width="16" height="16" fill="#3a9030" opacity=".28"/>
+                <rect x="8"  y="8"  width="4"  height="4"  fill="#58bb48" opacity=".18"/>
+                <rect x="24" y="0"  width="4"  height="4"  fill="#3a9030" opacity=".18"/>
+              </pattern>
+            </defs>
+            <rect x="0" y="0" width="1000" height="620" fill="url(#rGrass)"/>
+            ${river}
+            ${mountains}
+            ${dqTree(200,140,22)} ${dqTree(238,118,18)} ${dqTree(268,152,20)}
+            ${dqTree(316,80, 22)} ${dqTree(356,98, 18)} ${dqTree(296,128,16)}
+            ${dqTree(858,138,22)} ${dqTree(828,168,18)}
+            ${dqTree(132,348,20)} ${dqTree(162,378,18)} ${dqTree(112,398,22)}
+            ${dqTree(418,498,22)} ${dqTree(458,518,18)} ${dqTree(488,493,20)}
+            ${dqTree(538,538,20)} ${dqTree(568,512,18)}
+            ${dqTree(222,528,18)} ${dqTree(252,548,22)} ${dqTree(282,518,16)}
+            <rect x="42" y="338" width="38" height="58" rx="4" fill="#8a8060" stroke="#5a5040" stroke-width="2"/>
+            <polygon points="42,338 61,308 80,338" fill="#aa6622"/>
+            <rect x="53" y="353" width="15" height="19" fill="#443322" rx="2"/>
+            ${castle}
+            <g style="animation:rpgPartyWalk 5s ease-in-out infinite alternate">
+              <svg x="320" y="390" width="${charW*4+6*3}" height="${charH}" overflow="visible">
+                ${party}
+              </svg>
+            </g>
+          </svg>
+          <style>@keyframes rpgPartyWalk{0%{transform:translateX(-28px)}100%{transform:translateX(28px)}}</style>
+        </div>`;
+    }
+
+    if (s === 'shooting') {
+        const mkStarLayer = (n, r, spd, id) => {
+            const dots = Array.from({length:n},(_,i)=>`
+                <circle cx="${((i*137+5*id)%100)}%" cy="${((i*61+3*id)%200)}%" r="${r}" fill="${r>1.5?'#ffff88':'white'}"/>`).join('');
+            return `<svg style="position:absolute;left:0;top:-100%;width:100%;height:200%;animation:starFall ${spd}s linear infinite">${dots}${dots}</svg>`;
+        };
+        const enemyShip = (x,y,spd,delay,col) => `
+            <div style="position:absolute;left:${x}%;top:-60px;font-size:0;animation:enemyDesc ${spd}s ${delay}s linear infinite">
+              <svg width="44" height="36" viewBox="0 0 44 36">
+                <polygon points="22,0 44,24 34,36 10,36 0,24" fill="${col}" stroke="#fff" stroke-width="1.5"/>
+                <polygon points="22,6 36,24 8,24" fill="${col==='#ff44aa'?'#ff88cc':'#8888ff'}"/>
+                <circle cx="22" cy="20" r="5" fill="white" opacity=".7"/>
+                <ellipse cx="10" cy="30" rx="5" ry="3" fill="${col}" opacity=".7"/>
+                <ellipse cx="34" cy="30" rx="5" ry="3" fill="${col}" opacity=".7"/>
+              </svg>
+            </div>`;
+        const enemies = [
+            {x:20,spd:6,d:0,  col:'#ff44aa'},{x:35,spd:7,d:1.5,col:'#ff44aa'},
+            {x:50,spd:6,d:0.5,col:'#ff44aa'},{x:65,spd:7,d:2.2,col:'#ff44aa'},
+            {x:80,spd:6,d:1,  col:'#8844ff'},{x:12,spd:8,d:3,  col:'#8844ff'},
+            {x:42,spd:7,d:2.8,col:'#ff44aa'},{x:72,spd:8,d:0.8,col:'#8844ff'},
+        ].map(e=>enemyShip(e.x,0,e.spd,e.d,e.col)).join('');
+
+        return `<div style="position:absolute;inset:0;background:#000014;overflow:hidden">
+          ${mkStarLayer(55,1,14,1)}
+          ${mkStarLayer(22,2.2,8,2)}
+          ${mkStarLayer(8, 3.5,5,3)}
+          <div style="position:absolute;top:0;left:0;right:0;padding:6px 16px;display:flex;justify-content:space-between;font-family:'Outfit',monospace;font-size:clamp(11px,1.8vw,16px);color:#00ffff;text-shadow:0 0 6px #0ff;background:rgba(0,0,20,.5);animation:scoreFlash 3s ease-in-out infinite;z-index:2">
+            <span>1UP<br><span style="color:#ffff44">41500</span></span>
+            <span style="text-align:center">HI-SCORE<br><span style="color:#ffff44">90000</span></span>
+            <span style="text-align:right">2UP<br><span style="color:#ffff44">0</span></span>
+          </div>
+          ${enemies}
+          <div style="position:absolute;bottom:6%;left:50%;transform:translateX(-50%);z-index:2">
+            <svg width="60" height="72" viewBox="0 0 60 72">
+              <polygon points="30,0 56,52 44,60 16,60 4,52" fill="#ccddff" stroke="#88aaff" stroke-width="2"/>
+              <ellipse cx="30" cy="30" rx="10" ry="14" fill="#6699ff"/>
+              <ellipse cx="30" cy="28" rx="6" ry="8" fill="#aaccff" opacity=".8"/>
+              <polygon points="4,52 0,72 20,60" fill="#8899cc" stroke="#aabbff" stroke-width="1.5"/>
+              <polygon points="56,52 60,72 40,60" fill="#8899cc" stroke="#aabbff" stroke-width="1.5"/>
+              <ellipse cx="18" cy="62" rx="7" ry="5" fill="#ff8800" style="animation:engineGlow 0.4s ease-in-out infinite"/>
+              <ellipse cx="42" cy="62" rx="7" ry="5" fill="#ff8800" style="animation:engineGlow 0.4s 0.2s ease-in-out infinite"/>
+            </svg>
+          </div>
+          <div style="position:absolute;bottom:calc(6% + 70px);left:50%;transform:translateX(-50%);width:5px;border-radius:3px;background:linear-gradient(to top,#ffff44,#ffffff,#00ffff);filter:drop-shadow(0 0 5px #0ff);animation:beam 1.8s ease-in-out infinite;transform-origin:bottom center"></div>
+        </div>`;
+    }
+
+    if (s === 'fighting') {
+        const kaiP = {
+            A:'#443322',B:'#775533',L:'#cc2222',s:'#f0b880',S:'#c89060',
+            e:'#111111',m:'#bb7755',W:'#ffffff',w:'#e8e8e8',g:'#cccccc',
+            G:'#aaaaaa',K:'#222222',j:'#cc2222',f:'#f0b880',F:'#c89060',
+            o:'#d4a060',O:'#b88040',p:'#ffffff',P:'#dddddd'
+        };
+        const kaiR = [
+            '   AABBA    ','  ABBBbBA   ','  ALLLLbA   ','  AsssssA   ',
+            '  AsessA    ','  Asssss    ','   smss     ','  jWWWWj    ',
+            ' fWWWWWWf   ','FFWWWWWWWf  ','FfWWWKKKWW  ',' fWWWKKKWWf ',
+            '  WW     fFF','  wWW   FFF ','  wWW   gPP ',
+            '  wWW   gPP ','  gWW   GPP ','  gWW   GPP ',
+            '  ooo   Ooo ',' oooo   Oooo',
+        ];
+        const rexP = {
+            A:'#553322',B:'#885544',s:'#d49868',S:'#b07848',
+            e:'#111111',m:'#bb7755',
+            R:'#cc2222',r:'#991111',q:'#771111',
+            G:'#ee4422',g:'#cc2200',
+            T:'#ddddcc',t:'#bbbbaa',
+            o:'#c08858',O:'#a06838'
+        };
+        const rexR = [
+            '  AAbbA     ',' AAbbbbbA   ',' AssssssA   ',' AssessA    ',
+            ' Asssss     ','  sssss     ','  ssss      ','  sssss     ',
+            ' sssssssss  ','SssGGssssss ','SsGGGGssssS ',' SGGgGGssGGS',
+            '  SssRRRssS ','  RRRRRRs   ','  Rrr Rrr   ',
+            '  rrr rrr   ','  rrr rrr   ','  rrr rrr   ',
+            '  ooo ooo   ',' oooo oooo  ',
+        ];
+        const PS = 5;
+        const CW = 12*PS, CH = 20*PS;
+        const stage = `
+          <rect x="0" y="0" width="1000" height="52" fill="#8a8474"/>
+          <rect x="0" y="50" width="1000" height="6"  fill="#6e6860"/>
+          ${[120,300,500,700,880].map(x=>`
+            <rect x="${x-55}" y="6"  width="110" height="18" rx="3" fill="#e8e0c8"/>
+            <rect x="${x-50}" y="9"  width="100" height="10" rx="1" fill="#fffce8"/>
+            <rect x="${x-56}" y="4"  width="112" height="5"  fill="#666054"/>
+          `).join('')}
+          <rect x="0" y="56" width="1000" height="380" fill="#d0c8b0"/>
+          <rect x="0" y="130" width="1000" height="3" fill="#b8b098" opacity=".5"/>
+          <rect x="0" y="56"  width="1000" height="5" fill="#b8b098" opacity=".4"/>
+          <rect x="16" y="76" width="196" height="258" fill="#88cce8"/>
+          <rect x="16" y="76" width="196" height="168" fill="#c8e8f8"/>
+          <rect x="80"  y="140" width="80" height="100" fill="#e8e0d0"/>
+          <rect x="80"  y="130" width="80" height="14"  fill="#998878"/>
+          <rect x="92"  y="148" width="12" height="16"  fill="#a8ccee"/>
+          <rect x="112" y="148" width="12" height="16"  fill="#a8ccee"/>
+          <rect x="132" y="148" width="12" height="16"  fill="#a8ccee"/>
+          <rect x="26" y="160" width="8"  height="76"  fill="#8a6040"/>
+          <rect x="22" y="168" width="16" height="6"   fill="#7a5030"/>
+          ${[[36,120],[52,108],[24,118],[40,104],[60,114],[28,132],[56,128],[48,100]].map(([cx,cy])=>
+            `<circle cx="${cx}" cy="${cy}" r="14" fill="#ffaabb" opacity=".88"/>
+             <circle cx="${cx+4}" cy="${cy-4}" r="8" fill="#ffccdd" opacity=".7"/>`
+          ).join('')}
+          <path d="M16,76 Q30,120 26,200 Q22,260 30,334" fill="none" stroke="#e8e0cc" stroke-width="14" stroke-linecap="round"/>
+          <path d="M212,76 Q198,120 202,200 Q206,260 198,334" fill="none" stroke="#e8e0cc" stroke-width="14" stroke-linecap="round"/>
+          <rect x="16" y="76" width="196" height="258" fill="none" stroke="#c8b898" stroke-width="7"/>
+          <line x1="114" y1="76" x2="114" y2="334" stroke="#c8b898" stroke-width="5"/>
+          <line x1="16" y1="205" x2="212" y2="205" stroke="#c8b898" stroke-width="5"/>
+          <rect x="260" y="76" width="480" height="220" fill="#254a30" stroke="#1a3522" stroke-width="5"/>
+          <rect x="268" y="84" width="464" height="204" fill="#2d5a3a"/>
+          <text x="500" y="160" fill="#c8e0c0" font-family="serif" font-size="28" text-anchor="middle" opacity=".7">目標：一致団結</text>
+          <rect x="400" y="178" width="200" height="2"  fill="#a8c8a0" opacity=".4"/>
+          <rect x="420" y="278" width="36" height="10" rx="2" fill="#c8a878"/>
+          <rect x="480" y="278" width="36" height="10" rx="2" fill="#c8a878"/>
+          <rect x="260" y="76" width="480" height="220" fill="none" stroke="#8a7050" stroke-width="5"/>
+          <circle cx="500" cy="56"  r="18" fill="#e8e0c8" stroke="#888070" stroke-width="3"/>
+          <circle cx="500" cy="56"  r="2"  fill="#444"/>
+          <line x1="500" y1="56" x2="500" y2="44" stroke="#444" stroke-width="2.5"/>
+          <line x1="500" y1="56" x2="508" y2="60" stroke="#444" stroke-width="2"/>
+          <rect x="788" y="76" width="196" height="258" fill="#c8e8f8"/>
+          <rect x="788" y="76" width="196" height="168" fill="#b8ddf4"/>
+          <rect x="830" y="150" width="90" height="90"  fill="#e0d8c8"/>
+          <rect x="838" y="162" width="12" height="16"  fill="#a8ccee"/>
+          <rect x="858" y="162" width="12" height="16"  fill="#a8ccee"/>
+          <rect x="878" y="162" width="12" height="16"  fill="#a8ccee"/>
+          <path d="M788,76 Q802,120 798,200 Q794,260 802,334" fill="none" stroke="#e8e0cc" stroke-width="14" stroke-linecap="round"/>
+          <path d="M984,76 Q970,120 974,200 Q978,260 970,334" fill="none" stroke="#e8e0cc" stroke-width="14" stroke-linecap="round"/>
+          <rect x="788" y="76" width="196" height="258" fill="none" stroke="#c8b898" stroke-width="7"/>
+          <line x1="886" y1="76" x2="886" y2="334" stroke="#c8b898" stroke-width="5"/>
+          <line x1="788" y1="205" x2="984" y2="205" stroke="#c8b898" stroke-width="5"/>
+          ${[0,1,2,3].map(row=>[0,1,2].map(col=>{
+            const bx = 50 + col*72 + row*14;
+            const by = 330 + row*28;
+            const bw = 62 - row*4;
+            return `<rect x="${bx}" y="${by}" width="${bw}" height="${12-row}" rx="2" fill="#c8a060" stroke="#8a6030" stroke-width="1.5"/>
+                    <rect x="${bx+8}" y="${by+10-row}" width="${bw-16}" height="${20-row*3}" fill="#b88848" stroke="#7a5028" stroke-width="1"/>`;
+          }).join('')).join('')}
+          ${[0,1,2,3].map(row=>[0,1,2].map(col=>{
+            const bx = 740 - col*72 - row*14;
+            const by = 330 + row*28;
+            const bw = 62 - row*4;
+            return `<rect x="${bx}" y="${by}" width="${bw}" height="${12-row}" rx="2" fill="#c8a060" stroke="#8a6030" stroke-width="1.5"/>
+                    <rect x="${bx+8}" y="${by+10-row}" width="${bw-16}" height="${20-row*3}" fill="#b88848" stroke="#7a5028" stroke-width="1"/>`;
+          }).join('')).join('')}
+          <rect x="0" y="436" width="1000" height="184" fill="#c8a060"/>
+          ${Array.from({length:14},(_,i)=>`<line x1="0" y1="${438+i*13}" x2="1000" y2="${438+i*13}" stroke="#a88040" stroke-width="1.5" opacity=".4"/>`).join('')}
+          ${Array.from({length:10},(_,i)=>`<line x1="${i*100+50}" y1="436" x2="${i*100+50}" y2="620" stroke="#a88040" stroke-width="1" opacity=".2"/>`).join('')}
+          <rect x="0" y="590" width="1000" height="30" fill="#a07030" opacity=".35"/>
+          <rect x="752" y="90" width="30" height="24" rx="3" fill="#444" stroke="#333" stroke-width="2"/>
+          <circle cx="767" cy="102" r="8" fill="#333"/>
+          <circle cx="767" cy="102" r="5" fill="#555"/>`;
+
+        return `<div style="position:absolute;inset:0;overflow:hidden;image-rendering:pixelated;image-rendering:crisp-edges">
+          <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid slice" shape-rendering="crispEdges">
+            ${stage}
+            <rect x="0" y="0" width="1000" height="28" fill="#000000" opacity=".55"/>
+            <rect x="20"  y="5"  width="220" height="18" rx="2" fill="#222" stroke="#888" stroke-width="1.5"/>
+            <rect x="22"  y="7"  width="180" height="14" rx="1" fill="#ffcc00"/>
+            <rect x="22"  y="7"  width="80"  height="14" rx="1" fill="#ee4400"/>
+            <rect x="760" y="5"  width="220" height="18" rx="2" fill="#222" stroke="#888" stroke-width="1.5"/>
+            <rect x="762" y="7"  width="180" height="14" rx="1" fill="#ffcc00"/>
+            <rect x="762" y="7"  width="120" height="14" rx="1" fill="#ee4400"/>
+            <text x="500" y="21" fill="#ffcc00" font-family="'Dela Gothic One',sans-serif" font-size="16" text-anchor="middle" stroke="#000" stroke-width="2" paint-order="stroke">K.O</text>
+            <text x="250" y="20" fill="#ffffff" font-family="'Dela Gothic One',sans-serif" font-size="13" text-anchor="start" stroke="#000" stroke-width="2" paint-order="stroke">KAI</text>
+            <text x="750" y="20" fill="#ffffff" font-family="'Dela Gothic One',sans-serif" font-size="13" text-anchor="end"   stroke="#000" stroke-width="2" paint-order="stroke">REX</text>
+            <g style="animation:fightStance 1.1s ease-in-out infinite">
+              <svg x="220" y="300" width="${CW}" height="${CH}" overflow="visible">
+                ${pixelArt(0,0,kaiP,kaiR,PS)}
+              </svg>
+            </g>
+            <g transform="translate(780,0)" style="animation:fightStance 1.1s .5s ease-in-out infinite">
+              <svg x="${-CW}" y="300" width="${CW}" height="${CH}" overflow="visible" transform="scale(-1,1) translate(${-CW},0)">
+                ${pixelArt(0,0,rexP,rexR,PS)}
+              </svg>
+            </g>
+          </svg>
+        </div>`;
+    }
+}
+
+function updateBg(s) {
+    const html  = getBgHtml(s);
+    const isDark = (s === 'retro' || s === 'shooting');
+    const gc = document.getElementById('game-container');
+    const bc = document.getElementById('bg-canvas');
+    if (bc) bc.innerHTML = html;
+    if (isDark) {
+        gc.style.background = 'transparent';
+        gc.classList.add('dark-bg');
+    } else {
+        gc.style.background = '';
+        gc.classList.remove('dark-bg');
+    }
+    const sb = document.getElementById('start-bg');
+    if (sb) {
+        sb.innerHTML = html;
+        const ss = document.getElementById('screen-start');
+        if (isDark) {
+            ss.style.background = 'transparent';
+            ss.querySelectorAll('.game-title,.start-hint').forEach(el=>el.style.color='#eef');
+        } else {
+            ss.style.background = '';
+            ss.querySelectorAll('.game-title,.start-hint').forEach(el=>el.style.color='');
+        }
+    }
+}
+
+/* ======================================================
+   音源テーブル
+   ====================================================== */
+const TONES = {
+    'D3':146.83,'C3':130.81,'E3':164.81,'G3':196.00,'A3':220.00,'F3':174.61,
+    'C4':261.63,'D4':293.66,'E4':329.63,'F4':349.23,'G4':392.00,
+    'A4':440.00,'B4':493.88,'C5':523.25,'D5':587.33,'E5':659.25,
+    'F5':698.46,'G5':783.99,'A5':880.00
+};
+
+function createTone(freq, type, vol, t, dur=0.22) {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol,t); g.gain.linearRampToValueAtTime(0,t+dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+dur);
+}
+function sweepTone(f1,f2,type,vol,t,dur) {
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=type; o.frequency.setValueAtTime(f1,t);
+    o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+dur);
+}
+function noiseHit(t, ffreq, vol, dur, decay=8) {
+    const sz=Math.floor(audioCtx.sampleRate*dur);
+    const buf=audioCtx.createBuffer(1,sz,audioCtx.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<sz;i++) d[i]=(Math.random()*2-1)*Math.exp(-i/sz*decay);
+    const n=audioCtx.createBufferSource(), f=audioCtx.createBiquadFilter(), g=audioCtx.createGain();
+    n.buffer=buf; f.type='bandpass'; f.frequency.setValueAtTime(ffreq,t);
+    g.gain.setValueAtTime(vol,t); g.gain.linearRampToValueAtTime(0,t+dur);
+    n.connect(f); f.connect(g); g.connect(audioCtx.destination); n.start(t); n.stop(t+dur);
+}
+
+/* ======================================================
+   プロローグBGM
+   ====================================================== */
+const PROL_MEL = ['C4',null,null,'E4','G4',null,null,null,'C5',null,'B4',null,'G4',null,null,null,'A4',null,null,'C5','E5',null,null,null,'D5',null,'C5',null,'B4',null,null,null,'G4',null,null,'B4','D5',null,null,null,'G5',null,'E5',null,'D5',null,null,null,'C5',null,null,'G4','E4',null,null,null,'C4',null,null,null,null,null,null,null];
+const PROL_BAS = ['C3',null,null,null,'C3',null,null,null,'G3',null,null,null,'G3',null,null,null,'A3',null,null,null,'A3',null,null,null,'G3',null,null,null,'G3',null,null,null,'F3',null,null,null,'F3',null,null,null,'G3',null,null,null,'G3',null,null,null,'C3',null,null,null,'C3',null,null,null,'C3',null,null,null,null,null,null,null];
+function prologueTick() {
+    if (!audioCtx) return;
+    const now=audioCtx.currentTime, step=prologueStep%PROL_MEL.length;
+    const m=PROL_MEL[step]; if(m&&TONES[m]){createTone(TONES[m],'sine',0.032,now,0.5);createTone(TONES[m]*2,'triangle',0.012,now,0.5);}
+    const b=PROL_BAS[step]; if(b&&TONES[b]) createTone(TONES[b],'sine',0.04,now,0.7);
+    prologueStep++;
+}
+
+/* ======================================================
+   各スタイルのBGMシーケンス
+   ====================================================== */
+// ---- 🎵 Classic: ゆったりしたピアノ風（sine/triangle メイン） ----
+const MEL_CLAS=['E4',null,'G4',null,'C5',null,'B4',null,'A4',null,'G4',null,'E4',null,null,null,'F4',null,'A4',null,'C5',null,'E5',null,'D5',null,'C5',null,'B4',null,null,null];
+const BAS_CLAS=['C3',null,null,null,'G3',null,null,null,'A3',null,null,null,'E3',null,null,null,'F3',null,null,null,'C3',null,null,null,'G3',null,null,null,'C3',null,null,null];
+// ---- 👾 Retro: 8bit スクエア波 ----
+const MEL_RETRO=['C5','E5','G5','C5','G5','E5','C5',null,'D5','E5','G5','E5','D5','C5',null,null,'E5','G5','E5','G5','A4','G4','E4',null,'G4','B4','D5','B4','G4',null,null,null];
+const BAS_RETRO=['C3',null,'G3',null,'C3',null,'G3',null,'G3',null,'D3',null,'G3',null,'D3',null,'A3',null,'E3',null,'A3',null,'E3',null,'G3',null,'G3',null,'C3',null,null,null];
+// ---- 🎮 Modern RPG: ダイナミックなのこぎり波＋強いベース ----
+const MEL_MOD=['C4','E4','G4','C5','G4',null,'C5',null,'D5',null,'B4',null,'G4',null,'B4','D5','E5','C5','G4','E4','F4','G4','A4','B4','C5',null,'G4',null,'C5',null,null,null];
+const BAS_MOD=['C3',null,'C3',null,'E3',null,'E3',null,'G3',null,'G3',null,'G3',null,'G3',null,'A3',null,'A3',null,'F3',null,'F3',null,'C3',null,'G3',null,'C3',null,null,null];
+// ---- 🚀 Shooting: アグレッシブ ----
+const MEL_SHOOT=['A4',null,'C5','A4','E5',null,'D5',null,'C5','A4',null,'G4','A4',null,'E5',null,'D5',null,'C5','A4','G4',null,'A4',null,'E5','D5','C5',null,'A4',null,null,null];
+const BAS_SHOOT=['A3',null,null,null,'A3',null,null,null,'G3',null,null,null,'G3',null,null,null,'A3',null,null,null,'A3',null,null,null,'E3',null,null,null,'A3',null,null,null];
+
+function playBgmStep() {
+    if (!audioCtx) return;
+    const now=audioCtx.currentTime, step=bgmStep%32;
+    const S=soundStyle;
+    if (S==='classic') {
+        // ピアノ風・穏やか（sine + triangle）
+        const m=MEL_CLAS[step]; if(m&&TONES[m]){createTone(TONES[m],'sine',0.025,now,0.35);createTone(TONES[m]*2,'triangle',0.010,now,0.28);}
+        const b=BAS_CLAS[step]; if(b&&TONES[b]) createTone(TONES[b],'sine',0.035,now,0.45);
+        if(step%8===0) noiseHit(now,800,0.006,0.06,6);  // 軽いハイハット
+    } else if (S==='modern') {
+        // RPG風・力強い（sawtooth メロディ + 強いベース）
+        const m=MEL_MOD[step]; if(m&&TONES[m]){createTone(TONES[m],'sawtooth',0.018,now,0.18);createTone(TONES[m]*1.5,'triangle',0.010,now,0.20);}
+        const b=BAS_MOD[step]; if(b&&TONES[b]){createTone(TONES[b],'sawtooth',0.05,now,0.22);createTone(TONES[b]*2,'sine',0.015,now,0.18);}
+        if(step%4===0){noiseHit(now,1800,0.018,0.04,5);} // ドラム感
+        if(step%8===4) noiseHit(now,400,0.025,0.08,4);    // スネア感
+    } else if (S==='retro') {
+        const m=MEL_RETRO[step]; if(m&&TONES[m]) createTone(TONES[m],'square',0.04,now,0.12);
+        const b=BAS_RETRO[step]; if(b&&TONES[b]) createTone(TONES[b],'triangle',0.05,now,0.18);
+        if(step%4===0) noiseHit(now,4000,0.015,0.025,10);
+    } else {
+        const m=MEL_SHOOT[step]; if(m&&TONES[m]) createTone(TONES[m],'sawtooth',0.028,now,0.1);
+        const b=BAS_SHOOT[step]; if(b&&TONES[b]) createTone(TONES[b],'sawtooth',0.05,now,0.2);
+        if(step%8===0) noiseHit(now,180,0.06,0.09,5);
+        if(step%4===2) noiseHit(now,7000,0.01,0.018,12);
+    }
+    bgmStep++;
+}
+
+/* ======================================================
+   効果音
+   ====================================================== */
+function playSound(type) {
+    if (!audioCtx) return;
+    const now=audioCtx.currentTime, S=soundStyle;
+    if (S==='classic') {
+        if (type==='click_q') { createTone(523,'sine',0.15,now,0.12); createTone(659,'sine',0.10,now+0.06,0.10); }
+        else if (type==='click_a') { [523,659,784,1047].forEach((f,i)=>createTone(f,'sine',0.08,now+i*0.05,0.18)); }
+        else { [523,659,784,1047,1319].forEach((f,i)=>createTone(f,'sine',0.12,now+i*0.08,0.4)); }
+    } else if (S==='modern') {
+        if (type==='click_q') { createTone(261,'sawtooth',0.18,now,0.07); createTone(523,'triangle',0.12,now+0.04,0.10); }
+        else if (type==='click_a') { [523,659,784,1047].forEach((f,i)=>createTone(f,'sawtooth',0.10,now+i*0.04,0.14)); }
+        else { const ff=[523,523,523,523,698,880,1047,1319]; const tt=[0,.07,.14,.21,.32,.44,.56,.70]; ff.forEach((f,i)=>createTone(f,'sawtooth',0.14,now+tt[i],0.35)); }
+    } else if (S==='retro') {
+        if (type==='click_q') { createTone(523,'square',0.18,now,0.05); createTone(392,'square',0.12,now+0.05,0.05); }
+        else if (type==='click_a') { [523,659,784,1047].forEach((f,i)=>createTone(f,'square',0.14,now+i*0.055,0.08)); }
+        else { const ff=[523,523,523,523,659,784,1047,523,659,784,1047,1047]; const tt=[0,.08,.16,.24,.36,.48,.60,.72,.80,.88,.96,1.04]; ff.forEach((f,i)=>createTone(f,'square',0.14,now+tt[i],0.12)); }
+    } else {
+        if (type==='click_q') { sweepTone(900,80,'sawtooth',0.25,now,0.15); }
+        else if (type==='click_a') { sweepTone(300,1200,'sawtooth',0.12,now,0.18); [660,880,1047].forEach((f,i)=>createTone(f,'sine',0.08,now+0.1+i*0.04,0.1)); }
+        else { [440,554,659,880].forEach((f,i)=>createTone(f,'sawtooth',0.1,now+i*0.06,0.2)); setTimeout(()=>{[880,1047,1318].forEach((f,i)=>createTone(f,'sine',0.12,audioCtx.currentTime+i*0.08,0.3));},350); }
+    }
+}
+
+/* ======================================================
+   ゲーム進行
+   ====================================================== */
+function nextStep() {
+    const card = document.getElementById('card');
+    card.classList.add('card-flip');
+    setTimeout(() => card.classList.remove('card-flip'), 100);
+
+    if (!isAnswerPhase) {
+        isAnswerPhase = true;
+        combo++;
+        playSound('click_a');
+        updateCard();
+    } else {
+        isAnswerPhase = false;
+        currentIdx++;
+        if (currentIdx >= wordData.length) {
+            stopGameBgm();
+            const rs = document.getElementById('result-screen');
+            rs.style.display = 'flex';
+            playSound('clear');
+        } else {
+            playSound('click_q');
+            updateCard();
+        }
+    }
+}
+
+function prevStep(e) {
+    if (e) e.stopPropagation();
+    if (document.getElementById('result-screen').style.display === 'flex') return;
+    const card = document.getElementById('card');
+    card.classList.add('card-flip');
+    setTimeout(() => card.classList.remove('card-flip'), 100);
+    if (isAnswerPhase) {
+        isAnswerPhase = false;
+        combo = Math.max(0, combo - 1);
+        updateCard();
+    } else if (currentIdx > 0) {
+        currentIdx--;
+        isAnswerPhase = true;
+        updateCard();
+    }
+}
+
+function updateCard() {
+    if (currentIdx >= wordData.length) return;
+    const data = wordData[currentIdx];
+    document.getElementById('counter-text').innerText = `QUEST: ${currentIdx + 1} / ${wordData.length}`;
+    document.getElementById('p-bar').style.width = `${(currentIdx / wordData.length) * 100}%`;
+    document.getElementById('combo-text').innerText = `${combo} COMBO`;
+    const mText = document.getElementById('m-text');
+    const wType = document.getElementById('w-type');
+    const hText = document.getElementById('h-text');
+    if (!isAnswerPhase) {
+        wType.innerText = '【古文】';
+        wType.style.background = 'var(--secondary)';
+        mText.innerText = data.q;
+        mText.classList.remove('answer');
+        hText.innerText = 'せーの！で声に出して読もう！';
+        speak(data.q);
+    } else {
+        wType.innerText = '【現代語訳】';
+        wType.style.background = 'var(--primary)';
+        mText.innerText = data.a;
+        mText.classList.add('answer');
+        hText.innerText = `💡 ${data.h}`;
+        document.getElementById('p-bar').style.width = `${((currentIdx + 1) / wordData.length) * 100}%`;
+        speak(data.a);
+    }
+}
+
+function startGame() {
+    ensureAudio();
+    bgmStopped = false;
+    const btn = document.getElementById('global-bgm-btn');
+    if (btn) { btn.textContent = '⏸ BGM'; btn.style.background = '#fff'; btn.style.color = 'var(--secondary)'; btn.style.display = 'block'; }
+    startGameBgm();
+    document.getElementById('screen-start').style.display = 'none';
+    document.getElementById('game-container').style.opacity = '1';
+    updateBg(soundStyle);
+    currentIdx = 0; isAnswerPhase = false; combo = 0;
+    updateCard();
+}
+
+function resetGame(e) {
+    if (e) { e.stopPropagation(); e.preventDefault(); }
+    document.getElementById('result-screen').style.display = 'none';
+    startGame();
+}
+
+window.addEventListener('keydown', e => {
+    const gameActive   = document.getElementById('game-container').style.opacity === '1';
+    const startShowing = document.getElementById('screen-start').style.display === 'flex';
+    if (document.getElementById('screen-input').style.display === 'flex') return;
+    const isAdvanceKey = ['Space','ArrowRight','PageDown','ArrowDown','Enter'].includes(e.code);
+    const isBackKey    = ['ArrowLeft','PageUp'].includes(e.code);
+    if (!isAdvanceKey && !isBackKey) return;
+    e.preventDefault();
+    if (startShowing)     { startGame(); return; }
+    if (gameActive) {
+        if (isAdvanceKey) nextStep();
+        else              prevStep();
+    }
+});
+
+// screen-count クリックでprologue開始（slot-cardのクリックは除外）
+document.getElementById('screen-count').addEventListener('click', (e) => {
+    if (!e.target.closest('.slot-card, .slot-btn, #slots-area, #slot-search, #slots-more-btn')) {
+        startPrologue();
+    }
+});
+
+buildWordList(5);
+renderSlots();
+initFromUrl();
+setSoundStyle(soundStyle);
+updateBg(soundStyle);
+(function(){
+    const btn  = document.getElementById('speech-btn');
+    const wrap = document.getElementById('speech-speed-wrap');
+    if (btn) {
+        btn.textContent = speechEnabled ? '🔊 ON' : '🔇 OFF';
+        btn.classList.toggle('active', speechEnabled);
+    }
+    if (wrap) {
+        wrap.style.opacity       = speechEnabled ? '1'    : '0.4';
+        wrap.style.pointerEvents = speechEnabled ? 'auto' : 'none';
+    }
+    // スピードボタンの初期選択
+    document.querySelectorAll('.speed-btn').forEach(b =>
+        b.classList.toggle('active', parseFloat(b.dataset.rate) === speechRate));
+})();
+</script>
+</body>
+</html>
